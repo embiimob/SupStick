@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:SupStick.ViewModels"
+             x:Class="SupStick.Views.SearchPage"
+             x:DataType="viewmodel:SearchViewModel"
+             Title="{Binding Title}">
+
+    <Grid RowDefinitions="Auto,Auto,*" Padding="10">
+        
+        <!-- Search Header -->
+        <VerticalStackLayout Grid.Row="0" Spacing="5" Margin="0,0,0,10">
+            <Label Text="Search Messages & Files" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center"/>
+            <Label Text="{Binding StatusMessage}" FontSize="12" HorizontalOptions="Center" TextColor="Gray"/>
+        </VerticalStackLayout>
+
+        <!-- Search Box -->
+        <VerticalStackLayout Grid.Row="1" Spacing="10" Margin="0,0,0,10">
+            <Entry Placeholder="Enter address or P2FK handle..." 
+                   Text="{Binding SearchQuery}"
+                   ReturnCommand="{Binding SearchCommand}"
+                   ClearButtonVisibility="WhileEditing"/>
+            
+            <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                <Button Text="Search" 
+                        Command="{Binding SearchCommand}"
+                        WidthRequest="100"
+                        BackgroundColor="Blue"
+                        TextColor="White"/>
+                <Button Text="Clear" 
+                        Command="{Binding ClearCommand}"
+                        WidthRequest="100"/>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+
+        <!-- Search Results -->
+        <CollectionView Grid.Row="2" 
+                        ItemsSource="{Binding SearchResults}"
+                        SelectionMode="None">
+            <CollectionView.EmptyView>
+                <StackLayout VerticalOptions="Center">
+                    <Label Text="No results to display" 
+                           FontSize="16" 
+                           HorizontalOptions="Center"
+                           TextColor="Gray"/>
+                    <Label Text="Enter a search query to find items" 
+                           FontSize="12" 
+                           HorizontalOptions="Center"
+                           TextColor="Gray"/>
+                </StackLayout>
+            </CollectionView.EmptyView>
+            
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <SwipeView>
+                        <SwipeView.RightItems>
+                            <SwipeItems>
+                                <SwipeItem Text="Delete" 
+                                          BackgroundColor="Red"
+                                          Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:SearchViewModel}}, Path=DeleteItemCommand}"
+                                          CommandParameter="{Binding .}"/>
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+                        
+                        <Frame Margin="5" Padding="10" BorderColor="LightGray" CornerRadius="5">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                <Label Grid.Row="0" Grid.Column="0" 
+                                       Text="{Binding Type, StringFormat='[{0}]'}" 
+                                       FontAttributes="Bold" 
+                                       FontSize="12"
+                                       TextColor="Purple"/>
+                                <Label Grid.Row="0" Grid.Column="1" 
+                                       Text="{Binding IndexedAt, StringFormat='{0:g}'}" 
+                                       FontSize="10" 
+                                       TextColor="Gray"/>
+                                
+                                <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="{Binding Content}" 
+                                       FontSize="14"
+                                       LineBreakMode="WordWrap"
+                                       MaxLines="5"/>
+                                
+                                <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="{Binding FileName, StringFormat='File: {0}'}" 
+                                       FontSize="12"
+                                       TextColor="Blue"
+                                       IsVisible="{Binding FileName, Converter={StaticResource StringNotEmptyConverter}}"/>
+                                
+                                <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="{Binding SignedBy, StringFormat='From: {0}'}" 
+                                       FontSize="10"
+                                       TextColor="Gray"
+                                       LineBreakMode="TailTruncation"/>
+                                
+                                <Label Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="{Binding TransactionId, StringFormat='TX: {0}'}" 
+                                       FontSize="9"
+                                       TextColor="Gray"
+                                       LineBreakMode="TailTruncation"/>
+                            </Grid>
+                        </Frame>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="2" 
+                          IsRunning="{Binding IsBusy}" 
+                          IsVisible="{Binding IsBusy}"
+                          VerticalOptions="Center"
+                          HorizontalOptions="Center"/>
+    </Grid>
+
+</ContentPage>

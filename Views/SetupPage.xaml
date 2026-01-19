@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:SupStick.ViewModels"
+             x:Class="SupStick.Views.SetupPage"
+             x:DataType="viewmodel:SetupViewModel"
+             Title="{Binding Title}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="10" Spacing="15">
+            
+            <!-- Header -->
+            <Label Text="Setup & Configuration" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center"/>
+            <Label Text="{Binding StatusMessage}" FontSize="12" HorizontalOptions="Center" TextColor="Gray"/>
+            
+            <!-- Bitcoin P2P Connection Status -->
+            <Frame BorderColor="LightGray" Padding="10" CornerRadius="5">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Bitcoin testnet3 Connection" FontSize="16" FontAttributes="Bold"/>
+                    
+                    <Label Text="{Binding ConnectionInfo}" FontSize="12" TextColor="Gray" LineBreakMode="WordWrap"/>
+                    
+                    <Label Text="{Binding IsConnected, StringFormat='Status: {0}'}" 
+                           FontSize="12" 
+                           HorizontalOptions="Center">
+                        <Label.Triggers>
+                            <DataTrigger TargetType="Label" Binding="{Binding IsConnected}" Value="True">
+                                <Setter Property="TextColor" Value="Green"/>
+                                <Setter Property="Text" Value="✓ Connected to P2P Network"/>
+                            </DataTrigger>
+                            <DataTrigger TargetType="Label" Binding="{Binding IsConnected}" Value="False">
+                                <Setter Property="TextColor" Value="Red"/>
+                                <Setter Property="Text" Value="✗ Not Connected"/>
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- IPFS P2P Connection Status -->
+            <Frame BorderColor="LightGray" Padding="10" CornerRadius="5">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="IPFS Network Connection" FontSize="16" FontAttributes="Bold"/>
+                    
+                    <Label Text="{Binding IpfsConnectionInfo}" FontSize="12" TextColor="Gray" LineBreakMode="WordWrap"/>
+                    
+                    <Label Text="{Binding IsIpfsConnected, StringFormat='Status: {0}'}" 
+                           FontSize="12" 
+                           HorizontalOptions="Center">
+                        <Label.Triggers>
+                            <DataTrigger TargetType="Label" Binding="{Binding IsIpfsConnected}" Value="True">
+                                <Setter Property="TextColor" Value="Green"/>
+                                <Setter Property="Text" Value="✓ Connected to IPFS Peers"/>
+                            </DataTrigger>
+                            <DataTrigger TargetType="Label" Binding="{Binding IsIpfsConnected}" Value="False">
+                                <Setter Property="TextColor" Value="Orange"/>
+                                <Setter Property="Text" Value="⚠ Connecting..."/>
+                            </DataTrigger>
+                        </Label.Triggers>
+                    </Label>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Connection Check Button -->
+            <Button Text="Check Connection Status" 
+                    Command="{Binding CheckConnectionCommand}"
+                    BackgroundColor="Blue"
+                    TextColor="White"
+                    Margin="10,0"/>
+                    
+            <Label Text="ℹ️ Direct P2P connections - no servers required" 
+                   FontSize="10" 
+                   TextColor="Gray" 
+                   HorizontalOptions="Center"
+                   LineBreakMode="WordWrap"
+                   Margin="0,0,0,10"/>
+            
+            <!-- Monitored Addresses -->
+            <Frame BorderColor="LightGray" Padding="10" CornerRadius="5">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Monitored Addresses" FontSize="16" FontAttributes="Bold"/>
+                    
+                    <Label Text="Add Address to Monitor:"/>
+                    <Entry Text="{Binding NewAddress}" Placeholder="Bitcoin address"/>
+                    <Entry Text="{Binding NewHandle}" Placeholder="P2FK handle (optional)"/>
+                    <Button Text="Add Address" 
+                            Command="{Binding AddMonitoredAddressCommand}"
+                            BackgroundColor="Blue"
+                            TextColor="White"/>
+                    
+                    <Label Text="Currently Monitoring:" FontAttributes="Bold" Margin="0,10,0,0"/>
+                    <CollectionView ItemsSource="{Binding MonitoredAddresses}" MaximumHeightRequest="200">
+                        <CollectionView.EmptyView>
+                            <Label Text="No addresses being monitored" TextColor="Gray" FontSize="12"/>
+                        </CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <SwipeView>
+                                    <SwipeView.RightItems>
+                                        <SwipeItems>
+                                            <SwipeItem Text="Remove" 
+                                                      BackgroundColor="Red"
+                                                      Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:SetupViewModel}}, Path=RemoveMonitoredAddressCommand}"
+                                                      CommandParameter="{Binding .}"/>
+                                        </SwipeItems>
+                                    </SwipeView.RightItems>
+                                    <Frame Margin="2" Padding="5" BorderColor="LightBlue">
+                                        <VerticalStackLayout>
+                                            <Label Text="{Binding Address}" FontSize="12" LineBreakMode="TailTruncation"/>
+                                            <Label Text="{Binding Handle, StringFormat='Handle: {0}'}" FontSize="10" TextColor="Gray" IsVisible="{Binding Handle, Converter={StaticResource StringNotEmptyConverter}}"/>
+                                        </VerticalStackLayout>
+                                    </Frame>
+                                </SwipeView>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- Blocked Addresses -->
+            <Frame BorderColor="LightGray" Padding="10" CornerRadius="5">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Blocked Addresses" FontSize="16" FontAttributes="Bold"/>
+                    <Label Text="Addresses that will be ignored:" FontSize="12" TextColor="Gray"/>
+                    
+                    <CollectionView ItemsSource="{Binding BlockedAddresses}" MaximumHeightRequest="200">
+                        <CollectionView.EmptyView>
+                            <Label Text="No blocked addresses" TextColor="Gray" FontSize="12"/>
+                        </CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <SwipeView>
+                                    <SwipeView.RightItems>
+                                        <SwipeItems>
+                                            <SwipeItem Text="Unblock" 
+                                                      BackgroundColor="Green"
+                                                      Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:SetupViewModel}}, Path=UnblockAddressCommand}"
+                                                      CommandParameter="{Binding .}"/>
+                                        </SwipeItems>
+                                    </SwipeView.RightItems>
+                                    <Frame Margin="2" Padding="5" BorderColor="LightCoral">
+                                        <VerticalStackLayout>
+                                            <Label Text="{Binding Address}" FontSize="12" LineBreakMode="TailTruncation"/>
+                                            <Label Text="{Binding Reason}" FontSize="10" TextColor="Gray"/>
+                                        </VerticalStackLayout>
+                                    </Frame>
+                                </SwipeView>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- Data Management -->
+            <Frame BorderColor="LightGray" Padding="10" CornerRadius="5">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Data Management" FontSize="16" FontAttributes="Bold"/>
+                    <Label Text="Warning: This action cannot be undone" FontSize="12" TextColor="Red"/>
+                    <Button Text="Clear All Indexed Data" 
+                            Command="{Binding ClearAllDataCommand}"
+                            BackgroundColor="Red"
+                            TextColor="White"/>
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- Loading Indicator -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}" 
+                              IsVisible="{Binding IsBusy}"
+                              HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

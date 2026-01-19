@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:SupStick.ViewModels"
+             x:Class="SupStick.Views.StatusPage"
+             x:DataType="viewmodel:StatusViewModel"
+             Title="{Binding Title}">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="10">
+        
+        <!-- Status Header -->
+        <VerticalStackLayout Grid.Row="0" Spacing="5" Margin="0,0,0,10">
+            <Label Text="SupStick Mini Player" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center"/>
+            <Label Text="{Binding StatusMessage}" FontSize="14" HorizontalOptions="Center"/>
+            <Label Text="{Binding ItemCount, StringFormat='Total Items: {0}'}" FontSize="12" HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+
+        <!-- Monitoring Controls -->
+        <HorizontalStackLayout Grid.Row="1" Spacing="10" Margin="0,0,0,10" HorizontalOptions="Center">
+            <Button Text="Start Monitoring" 
+                    Command="{Binding StartMonitoringCommand}"
+                    BackgroundColor="Green"
+                    TextColor="White"
+                    WidthRequest="140"/>
+            <Button Text="Stop" 
+                    Command="{Binding StopMonitoringCommand}"
+                    BackgroundColor="Red"
+                    TextColor="White"
+                    WidthRequest="80"/>
+            <Button Text="Refresh" 
+                    Command="{Binding RefreshCommand}"
+                    WidthRequest="80"/>
+        </HorizontalStackLayout>
+
+        <!-- Recent Items List -->
+        <CollectionView Grid.Row="2" 
+                        ItemsSource="{Binding RecentItems}"
+                        SelectionMode="None">
+            <CollectionView.EmptyView>
+                <StackLayout VerticalOptions="Center">
+                    <Label Text="No indexed items yet" 
+                           FontSize="16" 
+                           HorizontalOptions="Center"
+                           TextColor="Gray"/>
+                    <Label Text="Start monitoring to index P2FK messages" 
+                           FontSize="12" 
+                           HorizontalOptions="Center"
+                           TextColor="Gray"/>
+                </StackLayout>
+            </CollectionView.EmptyView>
+            
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <SwipeView>
+                        <SwipeView.RightItems>
+                            <SwipeItems>
+                                <SwipeItem Text="Delete" 
+                                          BackgroundColor="Red"
+                                          Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:StatusViewModel}}, Path=DeleteItemCommand}"
+                                          CommandParameter="{Binding .}"/>
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+                        
+                        <Frame Margin="5" Padding="10" BorderColor="LightGray" CornerRadius="5">
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                                <Label Grid.Row="0" Grid.Column="0" 
+                                       Text="{Binding Type, StringFormat='[{0}]'}" 
+                                       FontAttributes="Bold" 
+                                       FontSize="12"/>
+                                <Label Grid.Row="0" Grid.Column="1" 
+                                       Text="{Binding IndexedAt, StringFormat='{0:g}'}" 
+                                       FontSize="10" 
+                                       TextColor="Gray"/>
+                                
+                                <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="{Binding Content}" 
+                                       FontSize="14"
+                                       LineBreakMode="TailTruncation"
+                                       MaxLines="2"/>
+                                
+                                <Label Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="{Binding FileName}" 
+                                       FontSize="12"
+                                       TextColor="Blue"
+                                       IsVisible="{Binding FileName, Converter={StaticResource StringNotEmptyConverter}}"/>
+                                
+                                <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                       Text="{Binding SignedBy, StringFormat='From: {0}'}" 
+                                       FontSize="10"
+                                       TextColor="Gray"
+                                       LineBreakMode="TailTruncation"/>
+                            </Grid>
+                        </Frame>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="2" 
+                          IsRunning="{Binding IsBusy}" 
+                          IsVisible="{Binding IsBusy}"
+                          VerticalOptions="Center"
+                          HorizontalOptions="Center"/>
+        
+        <!-- Footer -->
+        <Label Grid.Row="3" 
+               Text="Bitcoin testnet3 + IPFS" 
+               FontSize="10" 
+               HorizontalOptions="Center"
+               TextColor="Gray"
+               Margin="0,10,0,0"/>
+    </Grid>
+
+</ContentPage>

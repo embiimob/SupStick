@@ -29,10 +29,12 @@ SupStick is a cross-platform media player and P2FK (Pay-to-Future-Key) message i
 - Supports both text messages and file attachments
 
 ### IPFS Integration
-- Direct file downloads from IPFS gateways
-- Retry mechanism with multiple gateway fallbacks
-- Automatic file indexing
-- Support for audio and video files
+- **Direct IPFS P2P network connection**
+- No reliance on HTTP gateways
+- Connects to IPFS bootstrap nodes
+- Downloads files directly from IPFS peers
+- Automatic retry with peer reconnection
+- File indexing and local storage
 
 ### Media Player
 - **Seamless playback** between audio and video tracks
@@ -180,7 +182,13 @@ The app connects directly to Bitcoin testnet3 peer-to-peer network using NBitcoi
 - Fully decentralized operation
 
 ### IPFS Integration
-Files referenced with IPFS hashes are automatically downloaded using multiple gateway services with exponential backoff retry logic.
+Files referenced with IPFS hashes are automatically downloaded using **direct P2P connection** to the IPFS network:
+- Initializes local IPFS engine with repository
+- Connects to IPFS bootstrap nodes
+- Downloads files directly from IPFS peers
+- No dependency on HTTP gateways (ipfs.io, etc.)
+- Fully decentralized file retrieval
+- Automatic retry with peer reconnection
 
 ### Media Playback
 The media player supports:
@@ -199,10 +207,13 @@ The media player adapts to all screen sizes:
 ## Dependencies
 
 - **Microsoft.Maui.Controls** (9.0.10): Cross-platform UI framework
-- **NBitcoin** (7.0.40): Bitcoin library for transaction parsing
+- **NBitcoin** (7.0.40): Bitcoin library for P2P networking and transaction parsing
 - **Newtonsoft.Json** (13.0.3): JSON serialization
 - **SQLite-net-pcl** (1.9.172): Local database
 - **sqlite-net-sqlcipher** (1.9.172): Encrypted database support
+- **Ipfs.Core** (0.97.0): IPFS core library
+- **Ipfs.Engine** (0.97.0): IPFS engine for direct P2P
+- **Ipfs.Http.Client** (0.97.0): IPFS HTTP client fallback
 
 ## Security Considerations
 

@@ -14,12 +14,15 @@ namespace SupStick.ViewModels
     {
         private readonly IDataStorageService _dataStorage;
         private readonly IBitcoinService _bitcoinService;
+        private readonly IIpfsService _ipfsService;
 
         private string _newAddress = string.Empty;
         private string _newHandle = string.Empty;
         private string _statusMessage = "Configure settings";
         private bool _isConnected;
+        private bool _isIpfsConnected;
         private string _connectionInfo = "Connecting to Bitcoin testnet3 P2P network...";
+        private string _ipfsConnectionInfo = "Connecting to IPFS P2P network...";
 
         public string NewAddress
         {
@@ -45,10 +48,22 @@ namespace SupStick.ViewModels
             set => SetProperty(ref _isConnected, value);
         }
 
+        public bool IsIpfsConnected
+        {
+            get => _isIpfsConnected;
+            set => SetProperty(ref _isIpfsConnected, value);
+        }
+
         public string ConnectionInfo
         {
             get => _connectionInfo;
             set => SetProperty(ref _connectionInfo, value);
+        }
+
+        public string IpfsConnectionInfo
+        {
+            get => _ipfsConnectionInfo;
+            set => SetProperty(ref _ipfsConnectionInfo, value);
         }
 
         public ObservableCollection<MonitoredAddress> MonitoredAddresses { get; } = new();
@@ -61,10 +76,11 @@ namespace SupStick.ViewModels
         public ICommand UnblockAddressCommand { get; }
         public ICommand ClearAllDataCommand { get; }
 
-        public SetupViewModel(IDataStorageService dataStorage, IBitcoinService bitcoinService)
+        public SetupViewModel(IDataStorageService dataStorage, IBitcoinService bitcoinService, IIpfsService ipfsService)
         {
             _dataStorage = dataStorage;
             _bitcoinService = bitcoinService;
+            _ipfsService = ipfsService;
 
             Title = "Setup";
 
@@ -119,25 +135,41 @@ namespace SupStick.ViewModels
             try
             {
                 IsBusy = true;
-                StatusMessage = "Checking Bitcoin P2P connection...";
+                StatusMessage = "Checking P2P connections...";
 
+                // Check Bitcoin connection
                 IsConnected = await _bitcoinService.IsConnectedAsync();
                 
                 if (IsConnected)
                 {
-                    StatusMessage = "Connected to Bitcoin testnet3 P2P network";
                     ConnectionInfo = "Direct P2P connection established. No RPC server required.";
                 }
                 else
                 {
-                    StatusMessage = "Not connected to Bitcoin testnet3 network";
                     ConnectionInfo = "Connecting to Bitcoin testnet3 peers...";
                 }
+
+                // Check IPFS connection
+                IsIpfsConnected = await _ipfsService.IsConnectedAsync();
+                
+                if (IsIpfsConnected)
+                {
+                    IpfsConnectionInfo = "Direct IPFS P2P connection active.";
+                }
+                else
+                {
+                    IpfsConnectionInfo = "Connecting to IPFS peers...";
+                }
+
+                var btcStatus = IsConnected ? "✓" : "✗";
+                var ipfsStatus = IsIpfsConnected ? "✓" : "✗";
+                StatusMessage = $"Bitcoin: {btcStatus} | IPFS: {ipfsStatus}";
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Connection error: {ex.Message}";
                 IsConnected = false;
+                IsIpfsConnected = false;
             }
             finally
             {

@@ -64,6 +64,9 @@
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="SQLite-net-pcl" Version="1.9.172" />
 		<PackageReference Include="sqlite-net-sqlcipher" Version="1.9.172" />
+		<PackageReference Include="Ipfs.Core" Version="0.97.0" />
+		<PackageReference Include="Ipfs.Engine" Version="0.97.0" />
+		<PackageReference Include="Ipfs.Http.Client" Version="0.97.0" />
 	</ItemGroup>
 
 </Project>

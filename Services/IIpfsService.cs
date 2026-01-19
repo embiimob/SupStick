@@ -26,5 +26,10 @@ namespace SupStick.Services
         /// Extract IPFS hash from message content
         /// </summary>
         string? ExtractIpfsHash(string content);
+
+        /// <summary>
+        /// Check if connected to IPFS network
+        /// </summary>
+        Task<bool> IsConnectedAsync();
     }
 }

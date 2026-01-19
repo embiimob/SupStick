@@ -1,0 +1,66 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+
+# MAUI
+*.dll
+*.exe
+*.pdb
+*.apk
+*.aab
+*.ipa
+*.app
+*.dSYM
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.vsidx
+*.vsconfig
+
+# Rider
+.idea/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Local database files
+*.db
+*.db3
+*.db-shm
+*.db-wal
+
+# Local storage
+SupStickFiles/
+root/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db

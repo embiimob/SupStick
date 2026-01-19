@@ -1,0 +1,424 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:SupStick.ViewModels"
+             x:Class="SupStick.Views.MediaPlayerPage"
+             x:DataType="viewmodel:MediaPlayerViewModel"
+             Title="{Binding Title}">
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto" x:Name="MainGrid">
+        
+        <!-- Full Screen Video Area - shown when video is playing -->
+        <Grid Grid.Row="0" Grid.RowSpan="4" 
+              IsVisible="{Binding IsFullScreen}"
+              BackgroundColor="Black">
+            
+            <!-- Video Player Placeholder - Platform-specific implementation needed -->
+            <Label Text="VIDEO PLAYER AREA"
+                   TextColor="White"
+                   FontSize="24"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   IsVisible="{Binding IsVideoPlaying}"/>
+            
+            <!-- Tap to exit fullscreen -->
+            <Label Text="Tap to exit fullscreen"
+                   TextColor="LightGray"
+                   FontSize="12"
+                   HorizontalOptions="Center"
+                   VerticalOptions="End"
+                   Margin="0,0,0,20">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding ToggleFullScreenCommand}"/>
+                </Label.GestureRecognizers>
+            </Label>
+            
+            <!-- Fullscreen Playback Controls -->
+            <HorizontalStackLayout HorizontalOptions="Center" 
+                                   VerticalOptions="End"
+                                   Spacing="20"
+                                   Margin="0,0,0,80">
+                <Button Text="⏮" 
+                        Command="{Binding PreviousCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="32"/>
+                <Button Text="⏸" 
+                        Command="{Binding PauseCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="32"
+                        IsVisible="{Binding IsPlaying}"/>
+                <Button Text="▶" 
+                        Command="{Binding PlayCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="32"
+                        IsVisible="{Binding IsPaused}"/>
+                <Button Text="⏹" 
+                        Command="{Binding StopCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="32"/>
+                <Button Text="⏭" 
+                        Command="{Binding NextCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="32"/>
+            </HorizontalStackLayout>
+        </Grid>
+
+        <!-- Normal View - Media Player -->
+        <Grid Grid.Row="0" Grid.RowSpan="4" IsVisible="{Binding IsFullScreen, Converter={StaticResource InvertedBoolConverter}}">
+            
+            <Grid RowDefinitions="Auto,Auto,*,Auto">
+                
+                <!-- Header -->
+                <VerticalStackLayout Grid.Row="0" Padding="10" Spacing="5">
+                    <Label Text="Media Player" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center"/>
+                    <Label Text="{Binding StatusMessage}" FontSize="12" HorizontalOptions="Center" TextColor="Gray"/>
+                </VerticalStackLayout>
+
+                <!-- Now Playing / Video Display Area -->
+                <Frame Grid.Row="1" Margin="10" Padding="10" BorderColor="LightGray" HeightRequest="200">
+                    <Grid>
+                        <!-- Video Player Area -->
+                        <Grid IsVisible="{Binding IsVideoPlaying}" BackgroundColor="Black">
+                            <Label Text="VIDEO PLAYER"
+                                   TextColor="White"
+                                   FontSize="18"
+                                   HorizontalOptions="Center"
+                                   VerticalOptions="Center"/>
+                            <Button Text="⛶" 
+                                    Command="{Binding ToggleFullScreenCommand}"
+                                    BackgroundColor="Transparent"
+                                    TextColor="White"
+                                    FontSize="20"
+                                    HorizontalOptions="End"
+                                    VerticalOptions="Start"
+                                    Margin="5"/>
+                        </Grid>
+                        
+                        <!-- Audio Player Area -->
+                        <Grid IsVisible="{Binding IsAudioPlaying}">
+                            <VerticalStackLayout VerticalOptions="Center" Spacing="10">
+                                <Label Text="🎵" FontSize="48" HorizontalOptions="Center"/>
+                                <Label Text="{Binding CurrentMediaTitle}" 
+                                       FontSize="18" 
+                                       FontAttributes="Bold"
+                                       HorizontalOptions="Center"
+                                       LineBreakMode="TailTruncation"/>
+                                <Label Text="{Binding CurrentMediaType, StringFormat='Type: {0}'}" 
+                                       FontSize="12" 
+                                       TextColor="Gray"
+                                       HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                        
+                        <!-- Idle State -->
+                        <VerticalStackLayout VerticalOptions="Center" 
+                                           IsVisible="{Binding IsPlaying, Converter={StaticResource InvertedBoolConverter}}">
+                            <Label Text="No media playing" 
+                                   FontSize="16" 
+                                   TextColor="Gray"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Select a track from library or playlist" 
+                                   FontSize="12" 
+                                   TextColor="Gray"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Frame>
+
+                <!-- Main Content Area - Tabs -->
+                <Grid Grid.Row="2">
+                    <TabView>
+                        <!-- Library Tab -->
+                        <TabViewItem Text="Library">
+                            <Grid RowDefinitions="Auto,*" Padding="5">
+                                <!-- Filter -->
+                                <HorizontalStackLayout Grid.Row="0" Spacing="5" Margin="5">
+                                    <Label Text="Filter:" VerticalOptions="Center"/>
+                                    <Picker SelectedItem="{Binding FilterType}" WidthRequest="120">
+                                        <Picker.ItemsSource>
+                                            <x:Array Type="{x:Type x:String}">
+                                                <x:String>all</x:String>
+                                                <x:String>audio</x:String>
+                                                <x:String>video</x:String>
+                                            </x:Array>
+                                        </Picker.ItemsSource>
+                                    </Picker>
+                                    <Button Text="↻" Command="{Binding RefreshLibraryCommand}" WidthRequest="40"/>
+                                </HorizontalStackLayout>
+
+                                <!-- Media Library -->
+                                <CollectionView Grid.Row="1" ItemsSource="{Binding MediaLibrary}">
+                                    <CollectionView.EmptyView>
+                                        <Label Text="No media files found" 
+                                               TextColor="Gray" 
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"/>
+                                    </CollectionView.EmptyView>
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <SwipeView>
+                                                <SwipeView.LeftItems>
+                                                    <SwipeItems>
+                                                        <SwipeItem Text="Play" 
+                                                                  BackgroundColor="Green"
+                                                                  Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:MediaPlayerViewModel}}, Path=PlayMediaItemCommand}"
+                                                                  CommandParameter="{Binding .}"/>
+                                                    </SwipeItems>
+                                                </SwipeView.LeftItems>
+                                                <SwipeView.RightItems>
+                                                    <SwipeItems>
+                                                        <SwipeItem Text="Add to Queue" 
+                                                                  BackgroundColor="Blue"
+                                                                  Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:MediaPlayerViewModel}}, Path=AddToQueueCommand}"
+                                                                  CommandParameter="{Binding .}"/>
+                                                    </SwipeItems>
+                                                </SwipeView.RightItems>
+                                                <Frame Margin="2" Padding="8" BorderColor="LightGray">
+                                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                                        <Label Grid.Column="0" 
+                                                               Text="{Binding MediaType, StringFormat='[{0}]'}" 
+                                                               FontSize="10"
+                                                               VerticalOptions="Center"
+                                                               WidthRequest="50"/>
+                                                        <Label Grid.Column="1" 
+                                                               Text="{Binding Title}" 
+                                                               FontSize="14"
+                                                               VerticalOptions="Center"
+                                                               LineBreakMode="TailTruncation"/>
+                                                        <Label Grid.Column="2" 
+                                                               Text="▶" 
+                                                               FontSize="16"
+                                                               TextColor="Green"
+                                                               VerticalOptions="Center">
+                                                            <Label.GestureRecognizers>
+                                                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:MediaPlayerViewModel}}, Path=PlayMediaItemCommand}"
+                                                                                    CommandParameter="{Binding .}"/>
+                                                            </Label.GestureRecognizers>
+                                                        </Label>
+                                                    </Grid>
+                                                </Frame>
+                                            </SwipeView>
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                </CollectionView>
+                            </Grid>
+                        </TabViewItem>
+
+                        <!-- Current Playlist/Queue Tab -->
+                        <TabViewItem Text="Queue">
+                            <Grid RowDefinitions="Auto,*" Padding="5">
+                                <HorizontalStackLayout Grid.Row="0" Spacing="10" Margin="5">
+                                    <Label Text="{Binding CurrentPlaylistItems.Count, StringFormat='Items: {0}'}" 
+                                           VerticalOptions="Center"/>
+                                    <Button Text="New Playlist" 
+                                            Command="{Binding TogglePlaylistEditorCommand}"
+                                            FontSize="12"
+                                            Padding="5"/>
+                                </HorizontalStackLayout>
+
+                                <CollectionView Grid.Row="1" ItemsSource="{Binding CurrentPlaylistItems}">
+                                    <CollectionView.EmptyView>
+                                        <Label Text="Queue is empty" 
+                                               TextColor="Gray" 
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"/>
+                                    </CollectionView.EmptyView>
+                                    <CollectionView.ItemTemplate>
+                                        <DataTemplate>
+                                            <SwipeView>
+                                                <SwipeView.RightItems>
+                                                    <SwipeItems>
+                                                        <SwipeItem Text="Remove" 
+                                                                  BackgroundColor="Red"
+                                                                  Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:MediaPlayerViewModel}}, Path=RemoveFromPlaylistCommand}"
+                                                                  CommandParameter="{Binding .}"/>
+                                                    </SwipeItems>
+                                                </SwipeView.RightItems>
+                                                <Frame Margin="2" Padding="8" BorderColor="LightBlue">
+                                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                                        <Label Grid.Column="0" 
+                                                               Text="{Binding MediaType, StringFormat='[{0}]'}" 
+                                                               FontSize="10"
+                                                               VerticalOptions="Center"
+                                                               WidthRequest="50"/>
+                                                        <Label Grid.Column="1" 
+                                                               Text="{Binding Title}" 
+                                                               FontSize="14"
+                                                               VerticalOptions="Center"
+                                                               LineBreakMode="TailTruncation"/>
+                                                        <Label Grid.Column="2" 
+                                                               Text="▶" 
+                                                               FontSize="16"
+                                                               TextColor="Green"
+                                                               VerticalOptions="Center">
+                                                            <Label.GestureRecognizers>
+                                                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:MediaPlayerViewModel}}, Path=PlayMediaItemCommand}"
+                                                                                    CommandParameter="{Binding .}"/>
+                                                            </Label.GestureRecognizers>
+                                                        </Label>
+                                                    </Grid>
+                                                </Frame>
+                                            </SwipeView>
+                                        </DataTemplate>
+                                    </CollectionView.ItemTemplate>
+                                </CollectionView>
+                            </Grid>
+                        </TabViewItem>
+
+                        <!-- Playlists Tab -->
+                        <TabViewItem Text="Playlists">
+                            <CollectionView ItemsSource="{Binding Playlists}" Margin="5">
+                                <CollectionView.EmptyView>
+                                    <VerticalStackLayout VerticalOptions="Center" Spacing="10">
+                                        <Label Text="No playlists created" 
+                                               TextColor="Gray" 
+                                               HorizontalOptions="Center"/>
+                                        <Button Text="Create Playlist" 
+                                                Command="{Binding TogglePlaylistEditorCommand}"/>
+                                    </VerticalStackLayout>
+                                </CollectionView.EmptyView>
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <SwipeView>
+                                            <SwipeView.RightItems>
+                                                <SwipeItems>
+                                                    <SwipeItem Text="Delete" 
+                                                              BackgroundColor="Red"
+                                                              Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:MediaPlayerViewModel}}, Path=DeletePlaylistCommand}"
+                                                              CommandParameter="{Binding .}"/>
+                                                </SwipeItems>
+                                            </SwipeView.RightItems>
+                                            <Frame Margin="2" Padding="10" BorderColor="Purple">
+                                                <Grid>
+                                                    <VerticalStackLayout>
+                                                        <Label Text="{Binding Name}" FontSize="16" FontAttributes="Bold"/>
+                                                        <Label Text="{Binding Description}" FontSize="12" TextColor="Gray"/>
+                                                        <Label Text="{Binding UpdatedAt, StringFormat='Updated: {0:g}'}" FontSize="10" TextColor="Gray"/>
+                                                    </VerticalStackLayout>
+                                                    <Label Text="⏯" 
+                                                           FontSize="24"
+                                                           HorizontalOptions="End"
+                                                           VerticalOptions="Center">
+                                                        <Label.GestureRecognizers>
+                                                            <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodel:MediaPlayerViewModel}}, Path=LoadPlaylistCommand}"
+                                                                                CommandParameter="{Binding .}"/>
+                                                        </Label.GestureRecognizers>
+                                                    </Label>
+                                                </Grid>
+                                            </Frame>
+                                        </SwipeView>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </TabViewItem>
+                    </TabView>
+                </Grid>
+
+                <!-- Playback Controls -->
+                <Grid Grid.Row="3" Padding="10" BackgroundColor="WhiteSmoke">
+                    <Grid RowDefinitions="Auto,Auto,Auto">
+                        <!-- Progress Bar -->
+                        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,5">
+                            <Label Grid.Column="0" Text="{Binding CurrentPositionText}" FontSize="10"/>
+                            <Slider Grid.Column="1" 
+                                    Minimum="0" 
+                                    Maximum="{Binding Duration}"
+                                    Value="{Binding CurrentPosition}"
+                                    Margin="10,0"/>
+                            <Label Grid.Column="2" Text="{Binding DurationText}" FontSize="10"/>
+                        </Grid>
+
+                        <!-- Control Buttons -->
+                        <HorizontalStackLayout Grid.Row="1" 
+                                               HorizontalOptions="Center" 
+                                               Spacing="15">
+                            <Button Text="🔀" 
+                                    Command="{Binding ToggleShuffleCommand}"
+                                    WidthRequest="45"
+                                    HeightRequest="45"
+                                    BackgroundColor="{Binding IsShuffleEnabled, Converter={StaticResource BoolToColorConverter}}"/>
+                            <Button Text="⏮" 
+                                    Command="{Binding PreviousCommand}"
+                                    WidthRequest="50"
+                                    HeightRequest="50"
+                                    FontSize="20"/>
+                            <Button Text="⏸" 
+                                    Command="{Binding PauseCommand}"
+                                    WidthRequest="60"
+                                    HeightRequest="60"
+                                    FontSize="24"
+                                    BackgroundColor="Orange"
+                                    IsVisible="{Binding IsPlaying}"/>
+                            <Button Text="▶" 
+                                    Command="{Binding PlayCommand}"
+                                    WidthRequest="60"
+                                    HeightRequest="60"
+                                    FontSize="24"
+                                    BackgroundColor="Green"
+                                    IsVisible="{Binding IsPaused}"/>
+                            <Button Text="⏹" 
+                                    Command="{Binding StopCommand}"
+                                    WidthRequest="50"
+                                    HeightRequest="50"
+                                    FontSize="20"
+                                    BackgroundColor="Red"/>
+                            <Button Text="⏭" 
+                                    Command="{Binding NextCommand}"
+                                    WidthRequest="50"
+                                    HeightRequest="50"
+                                    FontSize="20"/>
+                            <Button Text="🔁" 
+                                    Command="{Binding ToggleRepeatCommand}"
+                                    WidthRequest="45"
+                                    HeightRequest="45"
+                                    BackgroundColor="{Binding IsRepeatEnabled, Converter={StaticResource BoolToColorConverter}}"/>
+                        </HorizontalStackLayout>
+
+                        <!-- Volume Control -->
+                        <Grid Grid.Row="2" ColumnDefinitions="Auto,*" Margin="0,5,0,0">
+                            <Label Grid.Column="0" Text="🔊" VerticalOptions="Center" Margin="0,0,10,0"/>
+                            <Slider Grid.Column="1" 
+                                    Minimum="0" 
+                                    Maximum="1"
+                                    Value="{Binding Volume}"/>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Grid>
+
+        <!-- Playlist Editor Popup -->
+        <Grid Grid.Row="0" Grid.RowSpan="4" 
+              IsVisible="{Binding ShowPlaylistEditor}"
+              BackgroundColor="#80000000">
+            <Frame Margin="20" 
+                   Padding="20" 
+                   BackgroundColor="White"
+                   VerticalOptions="Center"
+                   MaximumWidthRequest="400">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Create New Playlist" FontSize="18" FontAttributes="Bold"/>
+                    <Entry Placeholder="Playlist name" Text="{Binding PlaylistName}"/>
+                    <Entry Placeholder="Description (optional)" Text="{Binding PlaylistDescription}"/>
+                    <Label Text="Add items from Library, then save" FontSize="12" TextColor="Gray"/>
+                    <HorizontalStackLayout Spacing="10" HorizontalOptions="Center">
+                        <Button Text="Save Playlist" 
+                                Command="{Binding CreatePlaylistCommand}"
+                                BackgroundColor="Green"
+                                TextColor="White"/>
+                        <Button Text="Cancel" 
+                                Command="{Binding TogglePlaylistEditorCommand}"
+                                BackgroundColor="Gray"
+                                TextColor="White"/>
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+        </Grid>
+    </Grid>
+
+</ContentPage>

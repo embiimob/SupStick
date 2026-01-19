@@ -27,7 +27,7 @@ namespace SupStick.Services
         /// <summary>
         /// Monitor for new transactions in real-time
         /// </summary>
-        IAsyncEnumerable<string> MonitorNewTransactionsAsync();
+        IAsyncEnumerable<string> MonitorNewTransactionsAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Check if Bitcoin RPC is connected

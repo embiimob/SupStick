@@ -16,9 +16,9 @@ namespace SupStick.Services
     public class BitcoinService : IBitcoinService
     {
         private RPCClient? _rpcClient;
-        private readonly string _rpcUrl;
-        private readonly string _rpcUsername;
-        private readonly string _rpcPassword;
+        private string _rpcUrl;
+        private string _rpcUsername;
+        private string _rpcPassword;
         private readonly Network _network = Network.TestNet;
 
         public BitcoinService()

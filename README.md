@@ -4,7 +4,7 @@ A .NET MAUI-based mini player application that integrates with Bitcoin testnet3 
 
 ## Overview
 
-SupStick is a cross-platform media player and P2FK (Pay-to-Fake-Key) message indexer that:
+SupStick is a cross-platform media player and P2FK (Pay-to-Future-Key) message indexer that:
 - Connects directly to Bitcoin testnet3 to monitor transactions
 - Parses P2FK messages embedded in Bitcoin transactions
 - Downloads and indexes media files from IPFS

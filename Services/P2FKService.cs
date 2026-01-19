@@ -274,8 +274,9 @@ namespace SupStick.Services
             if (fileName.Length > 2 && fileName.Contains("."))
                 return true;
 
-            // Known file types without extension
-            if (fileName.Length == 3 && "BTC,LTC,DOG,MZC,IPFS".Contains(fileName))
+            // Known file types without extension - properly check collection
+            var knownTypes = new[] { "BTC", "LTC", "DOG", "MZC", "IPFS" };
+            if (fileName.Length == 3 && knownTypes.Contains(fileName))
                 return false;
 
             // Transaction ID (64 hex characters)

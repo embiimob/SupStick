@@ -209,8 +209,7 @@ namespace SupStick.Services
 
             foreach (var item in playlistItems)
             {
-                var indexedItems = await _dataStorage.GetAllIndexedItemsAsync();
-                var indexedItem = indexedItems.FirstOrDefault(i => i.Id == item.IndexedItemId);
+                var indexedItem = await _dataStorage.GetIndexedItemByIdAsync(item.IndexedItemId);
 
                 if (indexedItem != null && !string.IsNullOrEmpty(indexedItem.FileName) && IsMediaFile(indexedItem.FileName))
                 {

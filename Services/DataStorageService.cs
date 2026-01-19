@@ -59,6 +59,14 @@ namespace SupStick.Services
                 .ToListAsync();
         }
 
+        public async Task<IndexedItem?> GetIndexedItemByIdAsync(int id)
+        {
+            await InitializeAsync();
+            return await _database!.Table<IndexedItem>()
+                .Where(x => x.Id == id)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<List<IndexedItem>> GetItemsByAddressAsync(string address)
         {
             await InitializeAsync();

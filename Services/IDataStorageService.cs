@@ -25,6 +25,11 @@ namespace SupStick.Services
         Task<List<IndexedItem>> GetAllIndexedItemsAsync();
 
         /// <summary>
+        /// Get indexed item by ID
+        /// </summary>
+        Task<IndexedItem?> GetIndexedItemByIdAsync(int id);
+
+        /// <summary>
         /// Get indexed items by address
         /// </summary>
         Task<List<IndexedItem>> GetItemsByAddressAsync(string address);

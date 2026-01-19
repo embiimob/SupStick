@@ -10,7 +10,7 @@
         <VerticalStackLayout Padding="10" Spacing="15">
             
             <!-- Header -->
-            <Label Text="Setup & Configuration" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center"/>
+            <Label Text="Setup &amp; Configuration" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center"/>
             <Label Text="{Binding StatusMessage}" FontSize="12" HorizontalOptions="Center" TextColor="Gray"/>
             
             <!-- Bitcoin P2P Connection Status -->

@@ -243,10 +243,10 @@ namespace SupStick.Services
 
             while (!cancellationToken.IsCancellationRequested)
             {
+                List<string> currentTxIds = new List<string>();
+                
                 try
                 {
-                    List<string> currentTxIds;
-                    
                     lock (_mempoolTransactions)
                     {
                         currentTxIds = _mempoolTransactions
@@ -256,15 +256,15 @@ namespace SupStick.Services
                         
                         lastCount = _mempoolTransactions.Count;
                     }
-
-                    foreach (var txId in currentTxIds)
-                    {
-                        yield return txId;
-                    }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error monitoring transactions: {ex.Message}");
+                }
+
+                foreach (var txId in currentTxIds)
+                {
+                    yield return txId;
                 }
 
                 // Wait before checking again

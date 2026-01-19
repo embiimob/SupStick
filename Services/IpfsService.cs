@@ -5,6 +5,7 @@
 
 using Ipfs;
 using Ipfs.CoreApi;
+using Ipfs.Engine;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -230,7 +231,7 @@ namespace SupStick.Services
                 var peers = await _ipfs.Swarm.PeersAsync();
                 var peerCount = 0;
                 
-                await foreach (var peer in peers)
+                foreach (var peer in peers)
                 {
                     peerCount++;
                 }

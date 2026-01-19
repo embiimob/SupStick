@@ -30,6 +30,18 @@
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
+		<!-- Open Source Project Information -->
+		<Authors>SupStick Contributors</Authors>
+		<Company>Open Source Community</Company>
+		<Product>SupStick - Decentralized Media Player</Product>
+		<Description>Open-source decentralized media player with direct Bitcoin testnet3 and IPFS P2P connectivity</Description>
+		<Copyright>Copyright (c) 2026 SupStick Contributors</Copyright>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/embiimob/SupStick</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageProjectUrl>https://github.com/embiimob/SupStick</PackageProjectUrl>
+		<PackageTags>bitcoin;ipfs;p2p;decentralized;media-player;open-source;maui</PackageTags>
+
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">11.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">13.1</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>

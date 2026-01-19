@@ -1,3 +1,8 @@
+// SupStick - Open Source Decentralized Media Player
+// Copyright (c) 2026 SupStick Contributors
+// Licensed under the MIT License - see LICENSE file for details
+// Project: https://github.com/embiimob/SupStick
+
 using Microsoft.Extensions.Logging;
 using SupStick.Services;
 using SupStick.ViewModels;

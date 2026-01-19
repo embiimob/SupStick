@@ -1,5 +1,11 @@
 # SupStick
 
+**A fully open-source, decentralized .NET MAUI media player for Bitcoin testnet3 and IPFS**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![.NET MAUI](https://img.shields.io/badge/.NET%20MAUI-9.0-purple.svg)](https://dotnet.microsoft.com/apps/maui)
+[![Open Source](https://img.shields.io/badge/Open%20Source-100%25-brightgreen.svg)](https://github.com/embiimob/SupStick)
+
 A .NET MAUI-based mini player application that integrates with Bitcoin testnet3 and IPFS for decentralized media distribution.
 
 ## Overview
@@ -225,7 +231,42 @@ The media player adapts to all screen sizes:
 
 ## License
 
-This project is part of the SupStick repository.
+This project is **100% open source** and licensed under the [MIT License](LICENSE).
+
+### Open Source Commitment
+
+SupStick is committed to being fully open source:
+- ✅ **No proprietary code** - All source code is freely available
+- ✅ **No vendor lock-in** - Use and modify as you need
+- ✅ **Community-driven** - Contributions welcome
+- ✅ **Transparent** - All code is auditable
+- ✅ **Free forever** - No paid tiers or premium features
+
+You are free to:
+- ✓ Use this software for any purpose
+- ✓ Study how the software works
+- ✓ Modify the software to suit your needs
+- ✓ Distribute copies of the software
+- ✓ Distribute modified versions of the software
+
+## Contributing
+
+We welcome contributions! This is an open-source project and community participation is encouraged.
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code of Conduct
+
+- Be respectful and inclusive
+- Provide constructive feedback
+- Focus on the code, not the person
+- Help make this project better for everyone
 
 ## References
 
@@ -233,3 +274,15 @@ This project is part of the SupStick repository.
 - [IPFS](https://ipfs.io/)
 - [P2FK Protocol Reference](https://github.com/embiimob/Sup/blob/9045206c2159328c54eefed49bbac262f190aa0d/P2FK/contracts/Root.cs)
 - [.NET MAUI Documentation](https://docs.microsoft.com/dotnet/maui/)
+
+## Support
+
+- **Issues**: Report bugs or request features via [GitHub Issues](https://github.com/embiimob/SupStick/issues)
+- **Discussions**: Join conversations in [GitHub Discussions](https://github.com/embiimob/SupStick/discussions)
+- **Documentation**: Check the [README](README.md) and code comments
+
+---
+
+**Made with ❤️ by the open-source community**
+
+*This project is completely open source and free to use under the MIT License.*

@@ -5,7 +5,8 @@ A .NET MAUI-based mini player application that integrates with Bitcoin testnet3 
 ## Overview
 
 SupStick is a cross-platform media player and P2FK (Pay-to-Future-Key) message indexer that:
-- Connects directly to Bitcoin testnet3 to monitor transactions
+- **Connects directly to Bitcoin testnet3 P2P network** (no RPC server required)
+- Real-time transaction monitoring via peer-to-peer protocol
 - Parses P2FK messages embedded in Bitcoin transactions
 - Downloads and indexes media files from IPFS
 - Provides seamless audio and video playback with playlist management
@@ -15,9 +16,10 @@ SupStick is a cross-platform media player and P2FK (Pay-to-Future-Key) message i
 ## Features
 
 ### Bitcoin testnet3 Integration
-- Direct connection to Bitcoin testnet3 RPC
-- Real-time transaction monitoring
-- Mempool transaction fetching
+- **Direct P2P connection** to Bitcoin testnet3 network
+- No Bitcoin node or RPC server required
+- Real-time transaction monitoring via network gossip
+- Mempool transaction tracking
 - P2FK message parsing from transaction data
 
 ### P2FK Message Support
@@ -98,19 +100,8 @@ SupStick is a cross-platform media player and P2FK (Pay-to-Future-Key) message i
 
 ### Prerequisites
 - .NET 9.0 SDK or later
-- Bitcoin testnet3 node with RPC enabled
 - MAUI workloads installed
-
-### Bitcoin testnet3 Setup
-1. Install and run a Bitcoin testnet3 node
-2. Enable RPC in bitcoin.conf:
-   ```
-   testnet=1
-   server=1
-   rpcuser=your_username
-   rpcpassword=your_password
-   rpcport=18332
-   ```
+- **No Bitcoin node required** - connects directly to P2P network
 
 ### Building the Application
 ```bash
@@ -126,14 +117,14 @@ dotnet build -f net9.0-windows10.0.19041.0 # Windows
 
 ### Running the Application
 1. Launch the app on your target platform
-2. Navigate to the Setup screen
-3. Configure Bitcoin RPC connection:
-   - URL: `http://127.0.0.1:18332` (or your node's address)
-   - Username: Your RPC username
-   - Password: Your RPC password
-4. Test the connection
-5. Optionally add addresses to monitor
-6. Navigate to Status screen and start monitoring
+2. The app will **automatically connect** to Bitcoin testnet3 P2P network
+3. Navigate to the Setup screen to:
+   - Check connection status
+   - Add addresses to monitor
+   - Manage blocked addresses
+4. Navigate to Status screen and start monitoring
+
+**No RPC configuration required!** The app connects directly to Bitcoin testnet3 peers.
 
 ## Usage
 
@@ -178,7 +169,15 @@ dotnet build -f net9.0-windows10.0.19041.0 # Windows
 ## Technical Details
 
 ### P2FK Protocol
-The application parses P2FK messages embedded in Bitcoin testnet3 transactions using micro-transactions with specific values (0.00000001, 0.00000546, etc.). Messages are encoded in the payload of Bitcoin addresses.
+The application parses P2FK (Pay-to-Future-Key) messages embedded in Bitcoin testnet3 transactions using micro-transactions with specific values (0.00000001, 0.00000546, etc.). Messages are encoded in the payload of Bitcoin addresses.
+
+### Direct P2P Connection
+The app connects directly to Bitcoin testnet3 peer-to-peer network using NBitcoin's P2P protocol implementation:
+- Discovers and connects to testnet3 peers
+- Subscribes to transaction inventory messages
+- Downloads transactions directly from peers
+- No dependency on external RPC servers or blockchain APIs
+- Fully decentralized operation
 
 ### IPFS Integration
 Files referenced with IPFS hashes are automatically downloaded using multiple gateway services with exponential backoff retry logic.

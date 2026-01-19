@@ -88,7 +88,7 @@ namespace SupStick.ViewModels
 
                 // Check Bitcoin connection
                 var isConnected = await _bitcoinService.IsConnectedAsync();
-                StatusMessage = isConnected ? "Connected to Bitcoin testnet3" : "Not connected to Bitcoin RPC";
+                StatusMessage = isConnected ? "Connected to Bitcoin testnet3 P2P network" : "Connecting to Bitcoin testnet3 peers...";
             }
             catch (Exception ex)
             {

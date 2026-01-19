@@ -15,31 +15,11 @@ namespace SupStick.ViewModels
         private readonly IDataStorageService _dataStorage;
         private readonly IBitcoinService _bitcoinService;
 
-        private string _rpcUrl = "http://127.0.0.1:18332";
-        private string _rpcUsername = "user";
-        private string _rpcPassword = "pass";
         private string _newAddress = string.Empty;
         private string _newHandle = string.Empty;
         private string _statusMessage = "Configure settings";
         private bool _isConnected;
-
-        public string RpcUrl
-        {
-            get => _rpcUrl;
-            set => SetProperty(ref _rpcUrl, value);
-        }
-
-        public string RpcUsername
-        {
-            get => _rpcUsername;
-            set => SetProperty(ref _rpcUsername, value);
-        }
-
-        public string RpcPassword
-        {
-            get => _rpcPassword;
-            set => SetProperty(ref _rpcPassword, value);
-        }
+        private string _connectionInfo = "Connecting to Bitcoin testnet3 P2P network...";
 
         public string NewAddress
         {
@@ -65,11 +45,16 @@ namespace SupStick.ViewModels
             set => SetProperty(ref _isConnected, value);
         }
 
+        public string ConnectionInfo
+        {
+            get => _connectionInfo;
+            set => SetProperty(ref _connectionInfo, value);
+        }
+
         public ObservableCollection<MonitoredAddress> MonitoredAddresses { get; } = new();
         public ObservableCollection<BlockedAddress> BlockedAddresses { get; } = new();
 
-        public ICommand TestConnectionCommand { get; }
-        public ICommand SaveSettingsCommand { get; }
+        public ICommand CheckConnectionCommand { get; }
         public ICommand AddMonitoredAddressCommand { get; }
         public ICommand RemoveMonitoredAddressCommand { get; }
         public ICommand BlockAddressCommand { get; }
@@ -83,8 +68,7 @@ namespace SupStick.ViewModels
 
             Title = "Setup";
 
-            TestConnectionCommand = new Command(async () => await TestConnectionAsync());
-            SaveSettingsCommand = new Command(async () => await SaveSettingsAsync());
+            CheckConnectionCommand = new Command(async () => await CheckConnectionAsync());
             AddMonitoredAddressCommand = new Command(async () => await AddMonitoredAddressAsync(),
                 () => !string.IsNullOrWhiteSpace(NewAddress));
             RemoveMonitoredAddressCommand = new Command<MonitoredAddress>(async (addr) => await RemoveMonitoredAddressAsync(addr));
@@ -100,19 +84,6 @@ namespace SupStick.ViewModels
             try
             {
                 IsBusy = true;
-
-                // Load RPC settings
-                var url = await _dataStorage.GetSettingAsync("RpcUrl");
-                if (!string.IsNullOrEmpty(url))
-                    RpcUrl = url;
-
-                var username = await _dataStorage.GetSettingAsync("RpcUsername");
-                if (!string.IsNullOrEmpty(username))
-                    RpcUsername = username;
-
-                var password = await _dataStorage.GetSettingAsync("RpcPassword");
-                if (!string.IsNullOrEmpty(password))
-                    RpcPassword = password;
 
                 // Load monitored addresses
                 var monitored = await _dataStorage.GetMonitoredAddressesAsync();
@@ -131,7 +102,7 @@ namespace SupStick.ViewModels
                 }
 
                 // Check connection
-                IsConnected = await _bitcoinService.IsConnectedAsync();
+                await CheckConnectionAsync();
             }
             catch (Exception ex)
             {
@@ -143,55 +114,30 @@ namespace SupStick.ViewModels
             }
         }
 
-        private async Task TestConnectionAsync()
+        private async Task CheckConnectionAsync()
         {
             try
             {
                 IsBusy = true;
-                StatusMessage = "Testing connection...";
-
-                // Configure Bitcoin service
-                if (_bitcoinService is BitcoinService service)
-                {
-                    service.Configure(RpcUrl, RpcUsername, RpcPassword);
-                }
+                StatusMessage = "Checking Bitcoin P2P connection...";
 
                 IsConnected = await _bitcoinService.IsConnectedAsync();
-                StatusMessage = IsConnected ? "Connected successfully!" : "Connection failed";
+                
+                if (IsConnected)
+                {
+                    StatusMessage = "Connected to Bitcoin testnet3 P2P network";
+                    ConnectionInfo = "Direct P2P connection established. No RPC server required.";
+                }
+                else
+                {
+                    StatusMessage = "Not connected to Bitcoin testnet3 network";
+                    ConnectionInfo = "Connecting to Bitcoin testnet3 peers...";
+                }
             }
             catch (Exception ex)
             {
                 StatusMessage = $"Connection error: {ex.Message}";
                 IsConnected = false;
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        private async Task SaveSettingsAsync()
-        {
-            try
-            {
-                IsBusy = true;
-                StatusMessage = "Saving settings...";
-
-                await _dataStorage.SetSettingAsync("RpcUrl", RpcUrl);
-                await _dataStorage.SetSettingAsync("RpcUsername", RpcUsername);
-                await _dataStorage.SetSettingAsync("RpcPassword", RpcPassword);
-
-                // Configure Bitcoin service
-                if (_bitcoinService is BitcoinService service)
-                {
-                    service.Configure(RpcUrl, RpcUsername, RpcPassword);
-                }
-
-                StatusMessage = "Settings saved successfully";
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Failed to save settings: {ex.Message}";
             }
             finally
             {

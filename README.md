@@ -106,21 +106,41 @@ SupStick is a cross-platform media player and P2FK (Pay-to-Future-Key) message i
 
 ## Getting Started
 
+### Quick Start - Windows 11
+
+For complete step-by-step instructions starting from a fresh Windows 11 installation, see the **[BUILD_GUIDE.md](BUILD_GUIDE.md)** which includes:
+- Installing Visual Studio 2022 with .NET MAUI
+- Building for Windows PC
+- Testing on Android emulator
+- Testing on iPhone (via Mac)
+- Troubleshooting common issues
+
 ### Prerequisites
 - .NET 9.0 SDK or later
 - MAUI workloads installed
 - **No Bitcoin node required** - connects directly to P2P network
 
-### Building the Application
-```bash
-# Restore dependencies
-dotnet restore
+### Quick Build Commands
 
-# Build for specific platform
-dotnet build -f net9.0-android    # Android
-dotnet build -f net9.0-ios        # iOS
-dotnet build -f net9.0-maccatalyst # macOS
-dotnet build -f net9.0-windows10.0.19041.0 # Windows
+**Windows PC:**
+```bash
+git clone https://github.com/embiimob/SupStick.git
+cd SupStick
+dotnet restore
+dotnet build -f net9.0-windows10.0.19041.0
+dotnet run -f net9.0-windows10.0.19041.0
+```
+
+**Android:**
+```bash
+dotnet build -f net9.0-android
+# Then deploy via Visual Studio or ADB
+```
+
+**iOS (on Mac):**
+```bash
+dotnet build -f net9.0-ios
+dotnet run -f net9.0-ios
 ```
 
 ### Running the Application

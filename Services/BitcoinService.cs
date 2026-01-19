@@ -114,8 +114,7 @@ namespace SupStick.Services
         public void Configure(string url, string username, string password)
         {
             // Not needed for direct P2P connection
-            // This method is kept for interface compatibility but does nothing
-            Console.WriteLine("Direct P2P connection - RPC configuration not used");
+            // Kept for backward compatibility but does nothing
         }
 
         public async Task<bool> IsConnectedAsync()

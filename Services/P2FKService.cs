@@ -270,18 +270,18 @@ namespace SupStick.Services
             if (string.IsNullOrEmpty(fileName))
                 return false;
 
-            // Check for valid file names (with extension or known types)
-            if (fileName.Length > 2 && fileName.Contains("."))
-                return true;
-
-            // Known file types without extension - properly check collection
-            var knownTypes = new[] { "BTC", "LTC", "DOG", "MZC", "IPFS" };
-            if (fileName.Length == 3 && knownTypes.Contains(fileName))
+            // Known file types that should NOT be treated as files
+            var knownNonFileTypes = new[] { "BTC", "LTC", "DOG", "MZC", "IPFS" };
+            if (fileName.Length == 3 && knownNonFileTypes.Contains(fileName))
                 return false;
 
-            // Transaction ID (64 hex characters)
+            // Transaction ID (64 hex characters) - not a file
             if (!fileName.Contains(".") && fileName.Length == 64)
                 return false;
+
+            // Check for valid file names with extension
+            if (fileName.Length > 2 && fileName.Contains("."))
+                return true;
 
             return false;
         }

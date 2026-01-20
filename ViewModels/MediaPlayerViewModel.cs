@@ -214,7 +214,13 @@ namespace SupStick.ViewModels
             RemoveFromPlaylistCommand = new Command<MediaItem>(RemoveFromCurrentPlaylist);
             RefreshLibraryCommand = new Command(async () => await LoadMediaItemsAsync());
             TogglePlaylistEditorCommand = new Command(() => ShowPlaylistEditor = !ShowPlaylistEditor);
-            SelectTabCommand = new Command<int>(index => SelectedTabIndex = index);
+            SelectTabCommand = new Command<object>(param => 
+            {
+                if (param != null && int.TryParse(param.ToString(), out int index))
+                {
+                    SelectedTabIndex = index;
+                }
+            });
 
             Task.Run(async () => await InitializeAsync());
         }

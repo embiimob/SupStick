@@ -11,6 +11,9 @@ namespace SupStick.Services
     /// </summary>
     public class TransactionMonitorService : ITransactionMonitorService
     {
+        // Configuration constants
+        private const int ConnectionCheckDelaySeconds = 5;
+
         private readonly IBitcoinService _bitcoinService;
         private readonly IP2FKService _p2fkService;
         private readonly IIpfsService _ipfsService;
@@ -57,7 +60,7 @@ namespace SupStick.Services
                     OnStatusChanged(false, "Bitcoin testnet3 not connected - will retry connection");
                     
                     // Wait a bit for connection to establish
-                    await Task.Delay(TimeSpan.FromSeconds(5), _monitoringCts.Token);
+                    await Task.Delay(TimeSpan.FromSeconds(ConnectionCheckDelaySeconds), _monitoringCts.Token);
                     
                     // Check again
                     isConnected = await _bitcoinService.IsConnectedAsync();

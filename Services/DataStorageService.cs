@@ -13,6 +13,11 @@ namespace SupStick.Services
     /// </summary>
     public class DataStorageService : IDataStorageService
     {
+        // Configuration constants
+        private const int MaxTableCreationRetries = 3;
+        private const int RetryDelayBaseSeconds = 1;
+        private const int RetryBackoffExponent = 2;
+
         private SQLiteAsyncConnection? _database;
         private readonly string _dbPath;
 
@@ -60,7 +65,7 @@ namespace SupStick.Services
             }
         }
 
-        private async Task CreateTablesWithRetryAsync(int maxRetries = 3)
+        private async Task CreateTablesWithRetryAsync(int maxRetries = MaxTableCreationRetries)
         {
             Exception? lastException = null;
             
@@ -81,7 +86,7 @@ namespace SupStick.Services
                     if (attempt < maxRetries - 1)
                     {
                         Console.WriteLine($"Failed to create tables (attempt {attempt + 1}/{maxRetries}): {ex.Message}");
-                        await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Pow(RetryBackoffExponent, attempt) * RetryDelayBaseSeconds));
                     }
                 }
             }

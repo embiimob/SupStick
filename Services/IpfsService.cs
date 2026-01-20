@@ -6,6 +6,7 @@
 using Ipfs;
 using Ipfs.CoreApi;
 using Ipfs.Engine;
+using Ipfs.Http;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -86,7 +87,7 @@ namespace SupStick.Services
             {
                 Console.WriteLine("IPFS engine startup timed out after 30 seconds");
                 // Fallback to HTTP client for gateway access if direct P2P fails
-                _ipfs = new Ipfs.Http.IpfsClient();
+                _ipfs = new IpfsClient();
                 _isInitialized = true;
             }
             catch (Exception ex)
@@ -94,7 +95,7 @@ namespace SupStick.Services
                 Console.WriteLine($"Failed to initialize IPFS engine: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 // Fallback to HTTP client for gateway access if direct P2P fails
-                _ipfs = new Ipfs.Http.IpfsClient();
+                _ipfs = new IpfsClient();
                 _isInitialized = true;
             }
             finally

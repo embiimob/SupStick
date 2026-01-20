@@ -570,7 +570,7 @@ namespace SupStick.ViewModels
         {
             try
             {
-                bool confirm = await Application.Current!.MainPage!.DisplayAlert(
+                bool confirm = await Shell.Current.DisplayAlert(
                     "Delete Playlist",
                     $"Are you sure you want to delete '{playlist.Name}'?",
                     "Yes",

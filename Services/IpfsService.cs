@@ -69,11 +69,8 @@ namespace SupStick.Services
 
                 Console.WriteLine("Starting IPFS engine...");
                 
-                // Start the IPFS engine with timeout
-                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
-                {
-                    await _ipfsEngine.StartAsync(cts.Token);
-                }
+                // Start the IPFS engine
+                await _ipfsEngine.StartAsync();
                 
                 _ipfs = _ipfsEngine;
 

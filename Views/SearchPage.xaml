@@ -10,7 +10,7 @@
         
         <!-- Search Header -->
         <VerticalStackLayout Grid.Row="0" Spacing="5" Margin="0,0,0,10">
-            <Label Text="Search Messages & Files" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center"/>
+            <Label Text="Search Messages &amp; Files" FontSize="20" FontAttributes="Bold" HorizontalOptions="Center"/>
             <Label Text="{Binding StatusMessage}" FontSize="12" HorizontalOptions="Center" TextColor="Gray"/>
         </VerticalStackLayout>
 

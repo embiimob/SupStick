@@ -15,6 +15,8 @@
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
             <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter" />
             <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
+            <converters:BoolToTabBackgroundConverter x:Key="BoolToTabBackgroundConverter" />
+            <converters:BoolToTabTextColorConverter x:Key="BoolToTabTextColorConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

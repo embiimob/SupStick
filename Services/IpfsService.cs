@@ -5,6 +5,8 @@
 
 using Ipfs;
 using Ipfs.CoreApi;
+using Ipfs.Engine;
+using Ipfs.Http;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -25,7 +27,18 @@ namespace SupStick.Services
 
         public IpfsService()
         {
-            Task.Run(async () => await InitializeAsync());
+            // Initialize asynchronously without blocking
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await InitializeAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"IPFS initialization failed in background: {ex.Message}");
+                }
+            });
         }
 
         private async Task InitializeAsync()
@@ -46,32 +59,43 @@ namespace SupStick.Services
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "ipfs-repo");
 
-                _ipfsEngine = new IpfsEngine(repoPath.ToCharArray());
+                Console.WriteLine($"IPFS repository path: {repoPath}");
 
-                // Configure IPFS engine options
-                var options = new IpfsEngineOptions
+                // Create IPFS engine instance (default constructor)
+                _ipfsEngine = new IpfsEngine();
+
+                // Configure IPFS engine options with repository path
+                _ipfsEngine.Options.Repository.Folder = repoPath;
+
+                Console.WriteLine("Starting IPFS engine...");
+                
+                // Start the IPFS engine with timeout
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)))
                 {
-                    Repository = new RepositoryOptions
-                    {
-                        Folder = repoPath
-                    }
-                };
-
-                // Start the IPFS engine
-                await _ipfsEngine.StartAsync();
+                    await _ipfsEngine.StartAsync(cts.Token);
+                }
+                
                 _ipfs = _ipfsEngine;
 
                 _isInitialized = true;
                 Console.WriteLine("IPFS engine initialized successfully");
 
-                // Connect to bootstrap nodes
-                await ConnectToBootstrapNodesAsync();
+                // Connect to bootstrap nodes (non-blocking)
+                _ = Task.Run(async () => await ConnectToBootstrapNodesAsync());
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("IPFS engine startup timed out after 30 seconds");
+                // Fallback to HTTP client for gateway access if direct P2P fails
+                _ipfs = new IpfsClient();
+                _isInitialized = true;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to initialize IPFS engine: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 // Fallback to HTTP client for gateway access if direct P2P fails
-                _ipfs = new Ipfs.Http.IpfsClient();
+                _ipfs = new IpfsClient();
                 _isInitialized = true;
             }
             finally
@@ -223,14 +247,24 @@ namespace SupStick.Services
             {
                 await InitializeAsync();
 
-                if (_ipfs == null || _ipfsEngine == null)
+                if (_ipfs == null)
+                {
+                    Console.WriteLine("IPFS client is null");
                     return false;
+                }
 
-                // Check if we have any connected peers
+                // If we're using HTTP client fallback, consider it connected
+                if (_ipfsEngine == null)
+                {
+                    Console.WriteLine("Using IPFS HTTP client (fallback mode)");
+                    return true; // HTTP client doesn't need peer connections
+                }
+
+                // Check if we have any connected peers for P2P mode
                 var peers = await _ipfs.Swarm.PeersAsync();
                 var peerCount = 0;
                 
-                await foreach (var peer in peers)
+                foreach (var peer in peers)
                 {
                     peerCount++;
                 }

@@ -47,16 +47,11 @@ namespace SupStick.Services
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "ipfs-repo");
 
-                _ipfsEngine = new IpfsEngine(repoPath.ToCharArray());
+                // Create IPFS engine instance (default constructor)
+                _ipfsEngine = new IpfsEngine();
 
-                // Configure IPFS engine options
-                var options = new IpfsEngineOptions
-                {
-                    Repository = new RepositoryOptions
-                    {
-                        Folder = repoPath
-                    }
-                };
+                // Configure IPFS engine options with repository path
+                _ipfsEngine.Options.Repository.Folder = repoPath;
 
                 // Start the IPFS engine
                 await _ipfsEngine.StartAsync();
@@ -71,6 +66,7 @@ namespace SupStick.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to initialize IPFS engine: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 // Fallback to HTTP client for gateway access if direct P2P fails
                 _ipfs = new Ipfs.Http.IpfsClient();
                 _isInitialized = true;

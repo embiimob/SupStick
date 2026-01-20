@@ -28,200 +28,448 @@ namespace SupStick.Services
             if (_database != null)
                 return;
 
-            _database = new SQLiteAsyncConnection(_dbPath);
+            try
+            {
+                // Ensure directory exists
+                var directory = Path.GetDirectoryName(_dbPath);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                    Console.WriteLine($"Created database directory: {directory}");
+                }
 
-            // Create tables
-            await _database.CreateTableAsync<IndexedItem>();
-            await _database.CreateTableAsync<BlockedAddress>();
-            await _database.CreateTableAsync<MonitoredAddress>();
-            await _database.CreateTableAsync<AppSettings>();
+                Console.WriteLine($"Initializing database at: {_dbPath}");
+                _database = new SQLiteAsyncConnection(_dbPath);
+
+                // Create tables with retry logic
+                await CreateTablesWithRetryAsync();
+                
+                Console.WriteLine("Database initialized successfully");
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error during initialization: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw new Exception($"Failed to initialize database: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing database: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw new Exception($"Failed to initialize database: {ex.Message}", ex);
+            }
+        }
+
+        private async Task CreateTablesWithRetryAsync(int maxRetries = 3)
+        {
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                try
+                {
+                    // Create tables
+                    await _database!.CreateTableAsync<IndexedItem>();
+                    await _database.CreateTableAsync<BlockedAddress>();
+                    await _database.CreateTableAsync<MonitoredAddress>();
+                    await _database.CreateTableAsync<AppSettings>();
+                    return;
+                }
+                catch (SQLiteException ex) when (attempt < maxRetries - 1)
+                {
+                    Console.WriteLine($"Failed to create tables (attempt {attempt + 1}/{maxRetries}): {ex.Message}");
+                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+                }
+            }
         }
 
         public async Task<int> SaveIndexedItemAsync(IndexedItem item)
         {
-            await InitializeAsync();
+            try
+            {
+                await InitializeAsync();
 
-            if (item.Id == 0)
-            {
-                return await _database!.InsertAsync(item);
+                if (item.Id == 0)
+                {
+                    return await _database!.InsertAsync(item);
+                }
+                else
+                {
+                    return await _database!.UpdateAsync(item);
+                }
             }
-            else
+            catch (SQLiteException ex)
             {
-                return await _database!.UpdateAsync(item);
+                Console.WriteLine($"SQLite error saving indexed item: {ex.Message}");
+                throw new Exception($"Failed to save indexed item: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving indexed item: {ex.Message}");
+                throw;
             }
         }
 
         public async Task<List<IndexedItem>> GetAllIndexedItemsAsync()
         {
-            await InitializeAsync();
-            return await _database!.Table<IndexedItem>()
-                .OrderByDescending(x => x.IndexedAt)
-                .ToListAsync();
+            try
+            {
+                await InitializeAsync();
+                return await _database!.Table<IndexedItem>()
+                    .OrderByDescending(x => x.IndexedAt)
+                    .ToListAsync();
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error getting indexed items: {ex.Message}");
+                return new List<IndexedItem>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting indexed items: {ex.Message}");
+                return new List<IndexedItem>();
+            }
         }
 
         public async Task<IndexedItem?> GetIndexedItemByIdAsync(int id)
         {
-            await InitializeAsync();
-            return await _database!.Table<IndexedItem>()
-                .Where(x => x.Id == id)
-                .FirstOrDefaultAsync();
+            try
+            {
+                await InitializeAsync();
+                return await _database!.Table<IndexedItem>()
+                    .Where(x => x.Id == id)
+                    .FirstOrDefaultAsync();
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error getting indexed item by id: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting indexed item by id: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<List<IndexedItem>> GetItemsByAddressAsync(string address)
         {
-            await InitializeAsync();
-            return await _database!.Table<IndexedItem>()
-                .Where(x => x.SignedBy == address)
-                .OrderByDescending(x => x.IndexedAt)
-                .ToListAsync();
+            try
+            {
+                await InitializeAsync();
+                return await _database!.Table<IndexedItem>()
+                    .Where(x => x.SignedBy == address)
+                    .OrderByDescending(x => x.IndexedAt)
+                    .ToListAsync();
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error getting items by address: {ex.Message}");
+                return new List<IndexedItem>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting items by address: {ex.Message}");
+                return new List<IndexedItem>();
+            }
         }
 
         public async Task<List<IndexedItem>> SearchItemsAsync(string query)
         {
-            await InitializeAsync();
+            try
+            {
+                await InitializeAsync();
 
-            if (string.IsNullOrWhiteSpace(query))
-                return await GetAllIndexedItemsAsync();
+                if (string.IsNullOrWhiteSpace(query))
+                    return await GetAllIndexedItemsAsync();
 
-            query = query.ToLower();
+                query = query.ToLower();
 
-            var items = await _database!.Table<IndexedItem>().ToListAsync();
+                var items = await _database!.Table<IndexedItem>().ToListAsync();
 
-            return items.Where(x =>
-                x.Content.ToLower().Contains(query) ||
-                x.FileName.ToLower().Contains(query) ||
-                x.SignedBy.ToLower().Contains(query) ||
-                x.TransactionId.ToLower().Contains(query)
-            ).OrderByDescending(x => x.IndexedAt)
-            .ToList();
+                return items.Where(x =>
+                    x.Content.ToLower().Contains(query) ||
+                    x.FileName.ToLower().Contains(query) ||
+                    x.SignedBy.ToLower().Contains(query) ||
+                    x.TransactionId.ToLower().Contains(query)
+                ).OrderByDescending(x => x.IndexedAt)
+                .ToList();
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error searching items: {ex.Message}");
+                return new List<IndexedItem>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error searching items: {ex.Message}");
+                return new List<IndexedItem>();
+            }
         }
 
         public async Task<int> DeleteIndexedItemAsync(int id)
         {
-            await InitializeAsync();
-            return await _database!.DeleteAsync<IndexedItem>(id);
+            try
+            {
+                await InitializeAsync();
+                return await _database!.DeleteAsync<IndexedItem>(id);
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error deleting indexed item: {ex.Message}");
+                throw new Exception($"Failed to delete indexed item: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting indexed item: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<int> DeleteAllIndexedItemsAsync()
         {
-            await InitializeAsync();
-            return await _database!.DeleteAllAsync<IndexedItem>();
+            try
+            {
+                await InitializeAsync();
+                return await _database!.DeleteAllAsync<IndexedItem>();
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error deleting all indexed items: {ex.Message}");
+                throw new Exception($"Failed to delete all indexed items: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting all indexed items: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<int> BlockAddressAsync(string address, string reason)
         {
-            await InitializeAsync();
-
-            var blocked = new BlockedAddress
-            {
-                Address = address,
-                BlockedAt = DateTime.UtcNow,
-                Reason = reason
-            };
-
             try
             {
-                return await _database!.InsertAsync(blocked);
+                await InitializeAsync();
+
+                var blocked = new BlockedAddress
+                {
+                    Address = address,
+                    BlockedAt = DateTime.UtcNow,
+                    Reason = reason
+                };
+
+                try
+                {
+                    return await _database!.InsertAsync(blocked);
+                }
+                catch (SQLiteException)
+                {
+                    // Address already blocked
+                    Console.WriteLine($"Address already blocked: {address}");
+                    return 0;
+                }
             }
-            catch (SQLiteException)
+            catch (Exception ex)
             {
-                // Address already blocked
-                return 0;
+                Console.WriteLine($"Error blocking address: {ex.Message}");
+                throw;
             }
         }
 
         public async Task<int> UnblockAddressAsync(string address)
         {
-            await InitializeAsync();
-
-            var blocked = await _database!.Table<BlockedAddress>()
-                .Where(x => x.Address == address)
-                .FirstOrDefaultAsync();
-
-            if (blocked != null)
+            try
             {
-                return await _database.DeleteAsync(blocked);
-            }
+                await InitializeAsync();
 
-            return 0;
+                var blocked = await _database!.Table<BlockedAddress>()
+                    .Where(x => x.Address == address)
+                    .FirstOrDefaultAsync();
+
+                if (blocked != null)
+                {
+                    return await _database.DeleteAsync(blocked);
+                }
+
+                return 0;
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error unblocking address: {ex.Message}");
+                throw new Exception($"Failed to unblock address: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error unblocking address: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<bool> IsAddressBlockedAsync(string address)
         {
-            await InitializeAsync();
+            try
+            {
+                await InitializeAsync();
 
-            var count = await _database!.Table<BlockedAddress>()
-                .Where(x => x.Address == address)
-                .CountAsync();
+                var count = await _database!.Table<BlockedAddress>()
+                    .Where(x => x.Address == address)
+                    .CountAsync();
 
-            return count > 0;
+                return count > 0;
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error checking if address is blocked: {ex.Message}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking if address is blocked: {ex.Message}");
+                return false;
+            }
         }
 
         public async Task<List<BlockedAddress>> GetBlockedAddressesAsync()
         {
-            await InitializeAsync();
-            return await _database!.Table<BlockedAddress>()
-                .OrderByDescending(x => x.BlockedAt)
-                .ToListAsync();
+            try
+            {
+                await InitializeAsync();
+                return await _database!.Table<BlockedAddress>()
+                    .OrderByDescending(x => x.BlockedAt)
+                    .ToListAsync();
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error getting blocked addresses: {ex.Message}");
+                return new List<BlockedAddress>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting blocked addresses: {ex.Message}");
+                return new List<BlockedAddress>();
+            }
         }
 
         public async Task<int> SaveMonitoredAddressAsync(MonitoredAddress address)
         {
-            await InitializeAsync();
+            try
+            {
+                await InitializeAsync();
 
-            if (address.Id == 0)
-            {
-                return await _database!.InsertAsync(address);
+                if (address.Id == 0)
+                {
+                    return await _database!.InsertAsync(address);
+                }
+                else
+                {
+                    return await _database!.UpdateAsync(address);
+                }
             }
-            else
+            catch (SQLiteException ex)
             {
-                return await _database!.UpdateAsync(address);
+                Console.WriteLine($"SQLite error saving monitored address: {ex.Message}");
+                throw new Exception($"Failed to save monitored address: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving monitored address: {ex.Message}");
+                throw;
             }
         }
 
         public async Task<List<MonitoredAddress>> GetMonitoredAddressesAsync()
         {
-            await InitializeAsync();
-            return await _database!.Table<MonitoredAddress>()
-                .Where(x => x.IsActive)
-                .OrderByDescending(x => x.AddedAt)
-                .ToListAsync();
+            try
+            {
+                await InitializeAsync();
+                return await _database!.Table<MonitoredAddress>()
+                    .Where(x => x.IsActive)
+                    .OrderByDescending(x => x.AddedAt)
+                    .ToListAsync();
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error getting monitored addresses: {ex.Message}");
+                return new List<MonitoredAddress>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting monitored addresses: {ex.Message}");
+                return new List<MonitoredAddress>();
+            }
         }
 
         public async Task<int> DeleteMonitoredAddressAsync(int id)
         {
-            await InitializeAsync();
-            return await _database!.DeleteAsync<MonitoredAddress>(id);
+            try
+            {
+                await InitializeAsync();
+                return await _database!.DeleteAsync<MonitoredAddress>(id);
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error deleting monitored address: {ex.Message}");
+                throw new Exception($"Failed to delete monitored address: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting monitored address: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<string?> GetSettingAsync(string key)
         {
-            await InitializeAsync();
+            try
+            {
+                await InitializeAsync();
 
-            var setting = await _database!.Table<AppSettings>()
-                .Where(x => x.Key == key)
-                .FirstOrDefaultAsync();
+                var setting = await _database!.Table<AppSettings>()
+                    .Where(x => x.Key == key)
+                    .FirstOrDefaultAsync();
 
-            return setting?.Value;
+                return setting?.Value;
+            }
+            catch (SQLiteException ex)
+            {
+                Console.WriteLine($"SQLite error getting setting: {ex.Message}");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting setting: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task SetSettingAsync(string key, string value)
         {
-            await InitializeAsync();
-
-            var setting = await _database!.Table<AppSettings>()
-                .Where(x => x.Key == key)
-                .FirstOrDefaultAsync();
-
-            if (setting == null)
+            try
             {
-                setting = new AppSettings { Key = key, Value = value };
-                await _database.InsertAsync(setting);
+                await InitializeAsync();
+
+                var setting = await _database!.Table<AppSettings>()
+                    .Where(x => x.Key == key)
+                    .FirstOrDefaultAsync();
+
+                if (setting == null)
+                {
+                    setting = new AppSettings { Key = key, Value = value };
+                    await _database.InsertAsync(setting);
+                }
+                else
+                {
+                    setting.Value = value;
+                    await _database.UpdateAsync(setting);
+                }
             }
-            else
+            catch (SQLiteException ex)
             {
-                setting.Value = value;
-                await _database.UpdateAsync(setting);
+                Console.WriteLine($"SQLite error setting value: {ex.Message}");
+                throw new Exception($"Failed to set setting: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error setting value: {ex.Message}");
+                throw;
             }
         }
     }

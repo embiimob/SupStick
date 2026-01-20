@@ -248,7 +248,7 @@ namespace SupStick.ViewModels
         {
             try
             {
-                bool confirm = await Application.Current!.MainPage!.DisplayAlert(
+                bool confirm = await Shell.Current.DisplayAlert(
                     "Clear All Data",
                     "Are you sure you want to delete all indexed items? This cannot be undone.",
                     "Yes",

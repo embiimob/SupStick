@@ -11,6 +11,9 @@ namespace SupStick.Services
     /// </summary>
     public class TransactionMonitorService : ITransactionMonitorService
     {
+        // Configuration constants
+        private const int ConnectionCheckDelaySeconds = 5;
+
         private readonly IBitcoinService _bitcoinService;
         private readonly IP2FKService _p2fkService;
         private readonly IIpfsService _ipfsService;
@@ -54,10 +57,22 @@ namespace SupStick.Services
                 var isConnected = await _bitcoinService.IsConnectedAsync();
                 if (!isConnected)
                 {
-                    OnStatusChanged(false, "Bitcoin RPC not connected");
-                    _isMonitoring = false;
-                    return;
+                    OnStatusChanged(false, "Bitcoin testnet3 not connected - will retry connection");
+                    
+                    // Wait a bit for connection to establish
+                    await Task.Delay(TimeSpan.FromSeconds(ConnectionCheckDelaySeconds), _monitoringCts.Token);
+                    
+                    // Check again
+                    isConnected = await _bitcoinService.IsConnectedAsync();
+                    if (!isConnected)
+                    {
+                        _isMonitoring = false;
+                        OnStatusChanged(false, "Bitcoin testnet3 connection failed - please check network");
+                        return;
+                    }
                 }
+
+                OnStatusChanged(true, "Monitoring Bitcoin testnet3 transactions...");
 
                 // Start monitoring loop
                 await foreach (var txId in _bitcoinService.MonitorNewTransactionsAsync(_monitoringCts.Token))
@@ -66,18 +81,32 @@ namespace SupStick.Services
                     {
                         await ProcessTransactionAsync(txId);
                     }
+                    catch (OperationCanceledException)
+                    {
+                        Console.WriteLine($"Transaction processing cancelled for {txId}");
+                        break;
+                    }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error processing transaction {txId}: {ex.Message}");
+                        Console.WriteLine($"Stack trace: {ex.StackTrace}");
                     }
                 }
             }
             catch (OperationCanceledException)
             {
+                Console.WriteLine("Transaction monitoring was cancelled");
                 OnStatusChanged(false, "Monitoring stopped");
+            }
+            catch (ObjectDisposedException ex)
+            {
+                Console.WriteLine($"Object disposed during monitoring: {ex.Message}");
+                OnStatusChanged(false, "Monitoring stopped - service disposed");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Monitoring error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 OnStatusChanged(false, $"Monitoring error: {ex.Message}");
             }
             finally
@@ -88,9 +117,21 @@ namespace SupStick.Services
 
         public Task StopMonitoringAsync()
         {
-            _monitoringCts?.Cancel();
-            _isMonitoring = false;
-            OnStatusChanged(false, "Monitoring stopped");
+            try
+            {
+                _monitoringCts?.Cancel();
+                _isMonitoring = false;
+                OnStatusChanged(false, "Monitoring stopped");
+            }
+            catch (ObjectDisposedException ex)
+            {
+                Console.WriteLine($"Error stopping monitoring: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error stopping monitoring: {ex.Message}");
+            }
+            
             return Task.CompletedTask;
         }
 
@@ -122,7 +163,14 @@ namespace SupStick.Services
                 {
                     foreach (var message in root.Message)
                     {
-                        await ProcessMessageAsync(message, root);
+                        try
+                        {
+                            await ProcessMessageAsync(message, root);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error processing message in transaction {transactionId}: {ex.Message}");
+                        }
                     }
                 }
 
@@ -131,13 +179,26 @@ namespace SupStick.Services
                 {
                     foreach (var file in root.File)
                     {
-                        await ProcessFileAsync(file.Key, root);
+                        try
+                        {
+                            await ProcessFileAsync(file.Key, root);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error processing file in transaction {transactionId}: {ex.Message}");
+                        }
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine($"Processing cancelled for transaction {transactionId}");
+                throw;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error processing transaction {transactionId}: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
             }
         }
 
@@ -181,6 +242,10 @@ namespace SupStick.Services
 
                         OnItemIndexed(root.TransactionId, "ipfs", $"Downloaded: {fileName}");
                     }
+                    else
+                    {
+                        Console.WriteLine($"Failed to download IPFS file: {ipfsHash}");
+                    }
                 }
                 else
                 {
@@ -202,9 +267,19 @@ namespace SupStick.Services
                     OnItemIndexed(root.TransactionId, "message", message.Substring(0, Math.Min(50, message.Length)));
                 }
             }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Message processing was cancelled");
+                throw;
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"IO error processing message: {ex.Message}");
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error processing message: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
             }
         }
 
@@ -231,16 +306,24 @@ namespace SupStick.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error processing file {fileName}: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
             }
         }
 
         private string? ExtractFileNameFromMessage(string message)
         {
-            // Extract filename from pattern like <<IPFS:QmSdw1n...gedUg\sup.wav>>
-            var match = System.Text.RegularExpressions.Regex.Match(message, @"\\([^>]+)>>");
-            if (match.Success && match.Groups.Count > 1)
+            try
             {
-                return match.Groups[1].Value;
+                // Extract filename from pattern like <<IPFS:QmSdw1n...gedUg\sup.wav>>
+                var match = System.Text.RegularExpressions.Regex.Match(message, @"\\([^>]+)>>");
+                if (match.Success && match.Groups.Count > 1)
+                {
+                    return match.Groups[1].Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error extracting filename from message: {ex.Message}");
             }
 
             return null;
@@ -248,29 +331,52 @@ namespace SupStick.Services
 
         private async Task<string> SaveFileLocallyAsync(string fileName, byte[] data)
         {
-            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var filesDir = Path.Combine(appDataPath, "SupStickFiles");
-
-            if (!Directory.Exists(filesDir))
+            try
             {
-                Directory.CreateDirectory(filesDir);
+                var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var filesDir = Path.Combine(appDataPath, "SupStickFiles");
+
+                if (!Directory.Exists(filesDir))
+                {
+                    Directory.CreateDirectory(filesDir);
+                    Console.WriteLine($"Created files directory: {filesDir}");
+                }
+
+                // Sanitize filename
+                var sanitizedFileName = SanitizeFileName(fileName);
+                var filePath = Path.Combine(filesDir, sanitizedFileName);
+
+                await File.WriteAllBytesAsync(filePath, data);
+
+                Console.WriteLine($"Saved file locally: {filePath} ({data.Length} bytes)");
+                return filePath;
             }
-
-            // Sanitize filename
-            var sanitizedFileName = SanitizeFileName(fileName);
-            var filePath = Path.Combine(filesDir, sanitizedFileName);
-
-            await File.WriteAllBytesAsync(filePath, data);
-
-            return filePath;
+            catch (IOException ex)
+            {
+                Console.WriteLine($"IO error saving file {fileName}: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving file {fileName}: {ex.Message}");
+                throw;
+            }
         }
 
         private string SanitizeFileName(string fileName)
         {
-            // Remove invalid characters from filename
-            var invalidChars = Path.GetInvalidFileNameChars();
-            var sanitized = string.Join("_", fileName.Split(invalidChars));
-            return sanitized;
+            try
+            {
+                // Remove invalid characters from filename
+                var invalidChars = Path.GetInvalidFileNameChars();
+                var sanitized = string.Join("_", fileName.Split(invalidChars));
+                return sanitized;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sanitizing filename: {ex.Message}");
+                return "unknown_file";
+            }
         }
 
         private void OnItemIndexed(string transactionId, string type, string content)

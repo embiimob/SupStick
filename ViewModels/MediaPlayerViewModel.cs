@@ -32,6 +32,7 @@ namespace SupStick.ViewModels
         private string _playlistDescription = string.Empty;
         private string _filterType = "all"; // "all", "audio", "video"
         private bool _showPlaylistEditor;
+        private int _selectedTabIndex = 0; // 0=Library, 1=Queue, 2=Playlists
 
         public MediaItem? CurrentMediaItem
         {
@@ -137,6 +138,24 @@ namespace SupStick.ViewModels
             set => SetProperty(ref _showPlaylistEditor, value);
         }
 
+        public int SelectedTabIndex
+        {
+            get => _selectedTabIndex;
+            set
+            {
+                if (SetProperty(ref _selectedTabIndex, value))
+                {
+                    OnPropertyChanged(nameof(IsLibraryTabSelected));
+                    OnPropertyChanged(nameof(IsQueueTabSelected));
+                    OnPropertyChanged(nameof(IsPlaylistsTabSelected));
+                }
+            }
+        }
+
+        public bool IsLibraryTabSelected => SelectedTabIndex == 0;
+        public bool IsQueueTabSelected => SelectedTabIndex == 1;
+        public bool IsPlaylistsTabSelected => SelectedTabIndex == 2;
+
         public string CurrentPositionText => TimeSpan.FromSeconds(CurrentPosition).ToString(@"mm\:ss");
         public string DurationText => TimeSpan.FromSeconds(Duration).ToString(@"mm\:ss");
         public string CurrentMediaTitle => CurrentMediaItem?.Title ?? "No media loaded";
@@ -166,6 +185,7 @@ namespace SupStick.ViewModels
         public ICommand RemoveFromPlaylistCommand { get; }
         public ICommand RefreshLibraryCommand { get; }
         public ICommand TogglePlaylistEditorCommand { get; }
+        public ICommand SelectTabCommand { get; }
 
         public MediaPlayerViewModel(
             IMediaPlayerService mediaPlayerService,
@@ -194,6 +214,7 @@ namespace SupStick.ViewModels
             RemoveFromPlaylistCommand = new Command<MediaItem>(RemoveFromCurrentPlaylist);
             RefreshLibraryCommand = new Command(async () => await LoadMediaItemsAsync());
             TogglePlaylistEditorCommand = new Command(() => ShowPlaylistEditor = !ShowPlaylistEditor);
+            SelectTabCommand = new Command<int>(index => SelectedTabIndex = index);
 
             Task.Run(async () => await InitializeAsync());
         }

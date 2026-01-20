@@ -131,11 +131,39 @@
                 </Frame>
 
                 <!-- Main Content Area - Tabs -->
-                <Grid Grid.Row="2">
-                    <TabView>
-                        <!-- Library Tab -->
-                        <TabViewItem Text="Library">
-                            <Grid RowDefinitions="Auto,*" Padding="5">
+                <Grid Grid.Row="2" RowDefinitions="Auto,*">
+                    <!-- Tab Headers -->
+                    <Grid Grid.Row="0" ColumnDefinitions="*,*,*" Padding="5,0">
+                        <Button Grid.Column="0" 
+                                Text="Library" 
+                                Command="{Binding SelectTabCommand}" 
+                                CommandParameter="0"
+                                BackgroundColor="{Binding IsLibraryTabSelected, Converter={StaticResource BoolToTabBackgroundConverter}}"
+                                TextColor="{Binding IsLibraryTabSelected, Converter={StaticResource BoolToTabTextColorConverter}}"
+                                CornerRadius="5"
+                                Margin="2"/>
+                        <Button Grid.Column="1" 
+                                Text="Queue" 
+                                Command="{Binding SelectTabCommand}" 
+                                CommandParameter="1"
+                                BackgroundColor="{Binding IsQueueTabSelected, Converter={StaticResource BoolToTabBackgroundConverter}}"
+                                TextColor="{Binding IsQueueTabSelected, Converter={StaticResource BoolToTabTextColorConverter}}"
+                                CornerRadius="5"
+                                Margin="2"/>
+                        <Button Grid.Column="2" 
+                                Text="Playlists" 
+                                Command="{Binding SelectTabCommand}" 
+                                CommandParameter="2"
+                                BackgroundColor="{Binding IsPlaylistsTabSelected, Converter={StaticResource BoolToTabBackgroundConverter}}"
+                                TextColor="{Binding IsPlaylistsTabSelected, Converter={StaticResource BoolToTabTextColorConverter}}"
+                                CornerRadius="5"
+                                Margin="2"/>
+                    </Grid>
+
+                    <!-- Tab Content -->
+                    <Grid Grid.Row="1">
+                        <!-- Library Tab Content -->
+                        <Grid RowDefinitions="Auto,*" Padding="5" IsVisible="{Binding IsLibraryTabSelected}">
                                 <!-- Filter -->
                                 <HorizontalStackLayout Grid.Row="0" Spacing="5" Margin="5">
                                     <Label Text="Filter:" VerticalOptions="Center"/>
@@ -207,11 +235,9 @@
                                     </CollectionView.ItemTemplate>
                                 </CollectionView>
                             </Grid>
-                        </TabViewItem>
 
-                        <!-- Current Playlist/Queue Tab -->
-                        <TabViewItem Text="Queue">
-                            <Grid RowDefinitions="Auto,*" Padding="5">
+                        <!-- Queue Tab Content -->
+                        <Grid RowDefinitions="Auto,*" Padding="5" IsVisible="{Binding IsQueueTabSelected}">
                                 <HorizontalStackLayout Grid.Row="0" Spacing="10" Margin="5">
                                     <Label Text="{Binding CurrentPlaylistItems.Count, StringFormat='Items: {0}'}" 
                                            VerticalOptions="Center"/>
@@ -268,11 +294,9 @@
                                     </CollectionView.ItemTemplate>
                                 </CollectionView>
                             </Grid>
-                        </TabViewItem>
 
-                        <!-- Playlists Tab -->
-                        <TabViewItem Text="Playlists">
-                            <CollectionView ItemsSource="{Binding Playlists}" Margin="5">
+                        <!-- Playlists Tab Content -->
+                        <CollectionView ItemsSource="{Binding Playlists}" Margin="5" IsVisible="{Binding IsPlaylistsTabSelected}">
                                 <CollectionView.EmptyView>
                                     <VerticalStackLayout VerticalOptions="Center" Spacing="10">
                                         <Label Text="No playlists created" 
@@ -315,8 +339,7 @@
                                     </DataTemplate>
                                 </CollectionView.ItemTemplate>
                             </CollectionView>
-                        </TabViewItem>
-                    </TabView>
+                    </Grid>
                 </Grid>
 
                 <!-- Playback Controls -->

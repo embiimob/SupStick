@@ -20,6 +20,16 @@ namespace SupStick.Services
     /// </summary>
     public class IpfsService : IIpfsService
     {
+        // Configuration constants
+        private const int EngineStartupTimeoutSeconds = 30;
+        private const int BootstrapConnectionTimeoutSeconds = 30;
+        private const int PeerConnectionTimeoutSeconds = 5;
+        private const int FileDownloadTimeoutSeconds = 60;
+        private const int ConnectionCheckTimeoutSeconds = 10;
+        private const int EngineStopTimeoutMs = 5000;
+        private const int RetryDelayBaseSeconds = 2;
+        private const int RetryBackoffMultiplier = 2;
+
         private IpfsEngine? _ipfsEngine;
         private ICoreApi? _ipfs;
         private bool _isInitialized;
@@ -79,7 +89,7 @@ namespace SupStick.Services
                 }
 
                 // Create IPFS engine instance with timeout
-                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(EngineStartupTimeoutSeconds));
                 
                 try
                 {
@@ -103,7 +113,7 @@ namespace SupStick.Services
                 }
                 catch (OperationCanceledException)
                 {
-                    Console.WriteLine("IPFS engine startup timed out after 30 seconds");
+                    Console.WriteLine($"IPFS engine startup timed out after {EngineStartupTimeoutSeconds} seconds");
                     // Fallback to HTTP client for gateway access if direct P2P fails
                     try
                     {
@@ -167,7 +177,7 @@ namespace SupStick.Services
                 Console.WriteLine("Connecting to IPFS bootstrap nodes...");
 
                 // Get bootstrap peers and connect with timeout
-                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(BootstrapConnectionTimeoutSeconds));
                 var bootstrapPeers = await _ipfs.Bootstrap.ListAsync(timeoutCts.Token);
                 
                 int connectedCount = 0;
@@ -181,7 +191,7 @@ namespace SupStick.Services
 
                     try
                     {
-                        using var connectCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                        using var connectCts = new CancellationTokenSource(TimeSpan.FromSeconds(PeerConnectionTimeoutSeconds));
                         await _ipfs.Swarm.ConnectAsync(peer, connectCts.Token);
                         connectedCount++;
                         Console.WriteLine($"Connected to IPFS peer: {peer}");
@@ -266,7 +276,7 @@ namespace SupStick.Services
                 Console.WriteLine($"Downloading from IPFS P2P network: {ipfsHash}");
 
                 // Download directly from IPFS network with timeout
-                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(FileDownloadTimeoutSeconds));
                 
                 var cid = Cid.Decode(ipfsHash);
                 var stream = await _ipfs.FileSystem.ReadFileAsync(cid.Encode(), timeoutCts.Token);
@@ -343,7 +353,7 @@ namespace SupStick.Services
                 // Wait before retrying (exponential backoff)
                 if (attempt < maxRetries - 1 && !_isDisposed)
                 {
-                    var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt) * 2);
+                    var delay = TimeSpan.FromSeconds(Math.Pow(RetryBackoffMultiplier, attempt) * RetryDelayBaseSeconds);
                     Console.WriteLine($"Waiting {delay.TotalSeconds} seconds before retry...");
                     
                     try
@@ -394,7 +404,7 @@ namespace SupStick.Services
                 }
 
                 // Check if we have any connected peers for P2P mode with timeout
-                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(ConnectionCheckTimeoutSeconds));
                 var peers = await _ipfs.Swarm.PeersAsync(timeoutCts.Token);
                 var peerCount = 0;
                 
@@ -439,9 +449,9 @@ namespace SupStick.Services
                     try
                     {
                         var stopTask = _ipfsEngine.StopAsync();
-                        if (!stopTask.Wait(5000))
+                        if (!stopTask.Wait(EngineStopTimeoutMs))
                         {
-                            Console.WriteLine("IPFS engine stop timed out after 5 seconds");
+                            Console.WriteLine($"IPFS engine stop timed out after {EngineStopTimeoutMs}ms");
                         }
                         _ipfsEngine.Dispose();
                     }

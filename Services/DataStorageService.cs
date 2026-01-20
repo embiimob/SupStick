@@ -62,6 +62,8 @@ namespace SupStick.Services
 
         private async Task CreateTablesWithRetryAsync(int maxRetries = 3)
         {
+            Exception? lastException = null;
+            
             for (int attempt = 0; attempt < maxRetries; attempt++)
             {
                 try
@@ -73,11 +75,22 @@ namespace SupStick.Services
                     await _database.CreateTableAsync<AppSettings>();
                     return;
                 }
-                catch (SQLiteException ex) when (attempt < maxRetries - 1)
+                catch (SQLiteException ex)
                 {
-                    Console.WriteLine($"Failed to create tables (attempt {attempt + 1}/{maxRetries}): {ex.Message}");
-                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+                    lastException = ex;
+                    if (attempt < maxRetries - 1)
+                    {
+                        Console.WriteLine($"Failed to create tables (attempt {attempt + 1}/{maxRetries}): {ex.Message}");
+                        await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+                    }
                 }
+            }
+            
+            // Rethrow the last exception if all retries failed
+            if (lastException != null)
+            {
+                Console.WriteLine($"Failed to create tables after {maxRetries} attempts");
+                throw lastException;
             }
         }
 

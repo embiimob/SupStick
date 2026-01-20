@@ -20,6 +20,14 @@ namespace SupStick.Services
     /// </summary>
     public class BitcoinService : IBitcoinService
     {
+        // Configuration constants
+        private const int MaxMempoolTransactions = 10000;
+        private const int MempoolCleanupThreshold = 5000;
+        private const int MaxConnectionRetries = 5;
+        private const int ConnectionTimeoutSeconds = 30;
+        private const int RetryBackoffBaseSeconds = 2;
+        private const int RetryBackoffMultiplier = 2;
+
         private NodesGroup? _nodesGroup;
         private readonly Network _network = Network.TestNet;
         private readonly HashSet<uint256> _seenTransactions = new();
@@ -44,7 +52,7 @@ namespace SupStick.Services
                 var parameters = new NodeConnectionParameters();
                 
                 // Add connection timeout
-                parameters.ConnectCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(30)).Token;
+                parameters.ConnectCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(ConnectionTimeoutSeconds)).Token;
                 
                 _nodesGroup = new NodesGroup(_network, parameters);
                 
@@ -82,10 +90,9 @@ namespace SupStick.Services
 
         private async Task ConnectWithRetryAsync(CancellationToken cancellationToken)
         {
-            int maxRetries = 5;
             int attempt = 0;
 
-            while (attempt < maxRetries && !cancellationToken.IsCancellationRequested)
+            while (attempt < MaxConnectionRetries && !cancellationToken.IsCancellationRequested)
             {
                 try
                 {
@@ -95,7 +102,7 @@ namespace SupStick.Services
                         return;
                     }
 
-                    Console.WriteLine($"Attempting to connect to Bitcoin testnet3 P2P network (attempt {attempt + 1}/{maxRetries})...");
+                    Console.WriteLine($"Attempting to connect to Bitcoin testnet3 P2P network (attempt {attempt + 1}/{MaxConnectionRetries})...");
                     
                     // Connect to testnet peers
                     _nodesGroup.Connect();
@@ -133,10 +140,10 @@ namespace SupStick.Services
 
                 attempt++;
                 
-                if (attempt < maxRetries && !cancellationToken.IsCancellationRequested)
+                if (attempt < MaxConnectionRetries && !cancellationToken.IsCancellationRequested)
                 {
                     // Exponential backoff
-                    var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt) * 2);
+                    var delay = TimeSpan.FromSeconds(Math.Pow(RetryBackoffMultiplier, attempt) * RetryBackoffBaseSeconds);
                     Console.WriteLine($"Waiting {delay.TotalSeconds} seconds before retry...");
                     
                     try
@@ -151,9 +158,9 @@ namespace SupStick.Services
                 }
             }
 
-            if (attempt >= maxRetries)
+            if (attempt >= MaxConnectionRetries)
             {
-                Console.WriteLine($"Failed to connect to Bitcoin testnet3 after {maxRetries} attempts");
+                Console.WriteLine($"Failed to connect to Bitcoin testnet3 after {MaxConnectionRetries} attempts");
             }
         }
 
@@ -252,9 +259,9 @@ namespace SupStick.Services
                             _mempoolTransactions.Add(tx);
                             
                             // Keep mempool size manageable
-                            if (_mempoolTransactions.Count > 10000)
+                            if (_mempoolTransactions.Count > MaxMempoolTransactions)
                             {
-                                _mempoolTransactions.RemoveRange(0, 5000);
+                                _mempoolTransactions.RemoveRange(0, MempoolCleanupThreshold);
                             }
                         }
                         

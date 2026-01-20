@@ -74,11 +74,6 @@ namespace SupStick.Services
                 // Start monitoring loop
                 await foreach (var txId in _bitcoinService.MonitorNewTransactionsAsync(_monitoringCts.Token))
                 {
-                    if (_monitoringCts.Token.IsCancellationRequested)
-                    {
-                        break;
-                    }
-
                     try
                     {
                         await ProcessTransactionAsync(txId);

@@ -86,7 +86,8 @@ namespace SupStick.Services
                     if (attempt < maxRetries - 1)
                     {
                         Console.WriteLine($"Failed to create tables (attempt {attempt + 1}/{maxRetries}): {ex.Message}");
-                        await Task.Delay(TimeSpan.FromSeconds(Math.Pow(RetryBackoffExponent, attempt) * RetryDelayBaseSeconds));
+                        // Exponential backoff: 2^attempt * base seconds
+                        await Task.Delay(TimeSpan.FromSeconds((1 << attempt) * RetryDelayBaseSeconds));
                     }
                 }
             }

@@ -350,10 +350,10 @@ namespace SupStick.Services
                     Console.WriteLine($"IPFS P2P download attempt {attempt + 1} failed: {ex.Message}");
                 }
 
-                // Wait before retrying (exponential backoff)
+                // Wait before retrying (exponential backoff: 2^attempt * base seconds)
                 if (attempt < maxRetries - 1 && !_isDisposed)
                 {
-                    var delay = TimeSpan.FromSeconds(Math.Pow(RetryBackoffMultiplier, attempt) * RetryDelayBaseSeconds);
+                    var delay = TimeSpan.FromSeconds((1 << attempt) * RetryDelayBaseSeconds);
                     Console.WriteLine($"Waiting {delay.TotalSeconds} seconds before retry...");
                     
                     try

@@ -142,8 +142,8 @@ namespace SupStick.Services
                 
                 if (attempt < MaxConnectionRetries && !cancellationToken.IsCancellationRequested)
                 {
-                    // Exponential backoff
-                    var delay = TimeSpan.FromSeconds(Math.Pow(RetryBackoffMultiplier, attempt) * RetryBackoffBaseSeconds);
+                    // Exponential backoff: 2^attempt * base seconds
+                    var delay = TimeSpan.FromSeconds((1 << attempt) * RetryBackoffBaseSeconds);
                     Console.WriteLine($"Waiting {delay.TotalSeconds} seconds before retry...");
                     
                     try
